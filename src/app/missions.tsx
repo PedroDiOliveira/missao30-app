@@ -3,18 +3,26 @@ import { StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useMissionsData } from '@/context/missions-context';
 
 // Stub — Tela 2 do CONTEXT.md (catálogo de missões, filtros por categoria,
-// modal de "Aceitar Missão"). Ainda não construída; existe pra rota de
-// redirecionamento de estado vazio (CONTEXT.md Seção 7) ter um destino real.
+// modal de "Aceitar Missão"). Ainda não construída; só ganhou o aviso de
+// limite atingido (CONTEXT.md Seção 5 — múltiplas missões ativas com teto).
 export default function MissionsScreen() {
+  const { activeMissions, maxActiveMissions } = useMissionsData();
+  const atCap = activeMissions.length >= maxActiveMissions;
+
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title">Catálogo</ThemedText>
       <ThemedText type="default" themeColor="textSecondary">
-        Tela ainda não construída. É pra cá que a Home redireciona quando não
-        existe missão ativa.
+        Tela ainda não construída.
       </ThemedText>
+      {atCap && (
+        <ThemedText type="smallBold" themeColor="warning">
+          Limite de {maxActiveMissions} missões simultâneas atingido — encerre uma missão ativa pra aceitar outra.
+        </ThemedText>
+      )}
     </ThemedView>
   );
 }

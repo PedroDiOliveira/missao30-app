@@ -1,7 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import type { DayCellState } from '@/lib/types';
 
 interface ProgressGridProps {
@@ -28,13 +28,6 @@ function cellState(day: number, dayNumber: number, isActive: boolean, hasCheckIn
   return 'future';
 }
 
-const CELL_COLOR: Record<DayCellState, string> = {
-  completed: Colors.dark.success,
-  missed: Colors.dark.warning,
-  current: Colors.dark.current,
-  future: Colors.dark.locked,
-};
-
 function chunk<T>(items: T[], size: number): T[][] {
   const rows: T[][] = [];
   for (let i = 0; i < items.length; i += size) {
@@ -44,9 +37,19 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 export function ProgressGrid({ durationDays, dayNumber, startDate, checkInDates, isActive }: ProgressGridProps) {
+  const theme = useTheme();
   const checkInSet = new Set(checkInDates);
   const days = Array.from({ length: durationDays }, (_, i) => i + 1);
   const rows = chunk(days, COLUMNS);
+
+  // Cor de fundo e de texto por estado — contraste varia por tom, não dá
+  // pra usar um texto único pra todas as células como no tema escuro antigo.
+  const cellAppearance: Record<DayCellState, { background: string; text: string }> = {
+    completed: { background: theme.success, text: theme.textOnDark },
+    missed: { background: theme.warning, text: theme.text },
+    current: { background: theme.current, text: theme.textOnDark },
+    future: { background: theme.locked, text: theme.textSecondary },
+  };
 
   return (
     <View style={styles.grid}>
@@ -55,13 +58,10 @@ export function ProgressGrid({ durationDays, dayNumber, startDate, checkInDates,
           {row.map((day) => {
             const date = addDaysLocal(startDate, day - 1);
             const state = cellState(day, dayNumber, isActive, checkInSet.has(date));
+            const appearance = cellAppearance[state];
             return (
-              <View key={day} style={[styles.cell, { backgroundColor: CELL_COLOR[state] }]}>
-                <ThemedText
-                  type="smallBold"
-                  style={[styles.cellText, state === 'future' && styles.cellTextFuture]}>
-                  {day}
-                </ThemedText>
+              <View key={day} style={[styles.cell, { backgroundColor: appearance.background }]}>
+                <Text style={[styles.cellText, { color: appearance.text }]}>{day}</Text>
               </View>
             );
           })}
@@ -87,10 +87,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cellText: {
-    color: Colors.dark.text,
     fontSize: 12,
-  },
-  cellTextFuture: {
-    color: Colors.dark.textSecondary,
+    fontWeight: '700',
   },
 });

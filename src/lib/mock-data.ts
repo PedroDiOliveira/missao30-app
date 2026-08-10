@@ -1,134 +1,227 @@
 /**
- * Dados fake para construir o front sem o Supabase rodando ainda. O formato
+ * Dados fake pra construir o front sem o Supabase rodando ainda. O formato
  * segue exatamente os tipos de `types.ts` (que por sua vez espelham o
  * schema do CONTEXT.md) — quando o backend entrar de verdade, só se troca
- * de onde `ActiveMissionView` vem (deste arquivo para a RPC
- * get_user_mission_state), as telas não mudam.
+ * de onde `allUserMissions` vem (deste arquivo pra uma query real), as
+ * telas não mudam.
  *
- * Troque ACTIVE_SCENARIO abaixo para visualizar cada estado da Home.
+ * Troque ACTIVE_SCENARIO abaixo pra visualizar cada estado do dashboard.
  */
 
-import type { ActiveMissionView, CheckIn, Mission, UserMission } from '@/lib/types';
+import { addDays, daysAgo } from '@/lib/date';
+import { computeMissionState } from '@/lib/mission-state';
+import type { Mission, UserMission, UserMissionView } from '@/lib/types';
 
-export type MockScenario = 'in_progress' | 'completed' | 'none';
+export type MockScenario = 'empty' | 'single_active' | 'multiple_active' | 'at_cap';
 
-export const ACTIVE_SCENARIO: MockScenario = 'in_progress';
+export const ACTIVE_SCENARIO: MockScenario = 'multiple_active';
 
-// -- helpers de data locais, mesma convenção do CONTEXT.md (Seção 7): -----
-// sempre YYYY-MM-DD relativo à data local do dispositivo, nunca UTC bruto.
-function toLocalDateString(date: Date): string {
-  return date.toLocaleDateString('en-CA');
+// -- catálogo completo (CONTEXT.md Seção 12) ------------------------------
+export const missionCatalog: Mission[] = [
+  {
+    id: 'mission-study-1h',
+    title: 'Estudar 1 Hora por Dia',
+    description: 'Separe 60 minutos focados para estudar o que importa pra você, todos os dias.',
+    category: 'study',
+    icon_name: 'book-open',
+    duration_days: 30,
+    allowed_fails: 3,
+    is_published: true,
+    created_at: daysAgo(120),
+  },
+  {
+    id: 'mission-study-read20',
+    title: 'Ler 20 Páginas por Dia',
+    description: 'Construa o hábito da leitura, 20 páginas de cada vez.',
+    category: 'study',
+    icon_name: 'book',
+    duration_days: 30,
+    allowed_fails: 3,
+    is_published: true,
+    created_at: daysAgo(120),
+  },
+  {
+    id: 'mission-fitness-30min',
+    title: 'Treinar 30 Minutos por Dia',
+    description: 'Movimente o corpo por meia hora, todo santo dia.',
+    category: 'fitness',
+    icon_name: 'dumbbell',
+    duration_days: 30,
+    allowed_fails: 3,
+    is_published: true,
+    created_at: daysAgo(120),
+  },
+  {
+    id: 'mission-fitness-10k-steps',
+    title: '10 Mil Passos por Dia',
+    description: 'Caminhe até bater 10.000 passos, no seu ritmo.',
+    category: 'fitness',
+    icon_name: 'footprints',
+    duration_days: 30,
+    allowed_fails: 3,
+    is_published: true,
+    created_at: daysAgo(120),
+  },
+  {
+    id: 'mission-sleep-23h',
+    title: 'Dormir Antes das 23h',
+    description: 'Durma cedo e acorde com mais energia.',
+    category: 'sleep',
+    icon_name: 'moon',
+    duration_days: 30,
+    allowed_fails: 3,
+    is_published: true,
+    created_at: daysAgo(120),
+  },
+  {
+    id: 'mission-sleep-no-screens',
+    title: 'Sem Telas Antes de Dormir',
+    description: 'Desligue as telas 30 minutos antes de deitar.',
+    category: 'sleep',
+    // 'smartphone-off' não existe no Lucide — corrigido pra 'monitor-off',
+    // que cobre melhor o conceito de "tela" em geral (CONTEXT.md Seção 12).
+    icon_name: 'monitor-off',
+    duration_days: 30,
+    allowed_fails: 3,
+    is_published: true,
+    created_at: daysAgo(120),
+  },
+  {
+    id: 'mission-finance-track',
+    title: 'Registrar Todos os Gastos',
+    description: 'Anote cada real que sai do seu bolso, sem exceção.',
+    category: 'finance',
+    icon_name: 'wallet',
+    duration_days: 30,
+    allowed_fails: 3,
+    is_published: true,
+    created_at: daysAgo(120),
+  },
+  {
+    id: 'mission-finance-no-impulse',
+    title: 'Sem Gastos Supérfluos',
+    description: 'Um mês inteiro sem compras por impulso.',
+    category: 'finance',
+    icon_name: 'piggy-bank',
+    duration_days: 30,
+    allowed_fails: 3,
+    is_published: true,
+    created_at: daysAgo(120),
+  },
+];
+
+function catalogMission(id: string): Mission {
+  const mission = missionCatalog.find((m) => m.id === id);
+  if (!mission) throw new Error(`mock: missão de catálogo não encontrada: ${id}`);
+  return mission;
 }
 
-function daysAgo(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return toLocalDateString(d);
+// -- helper: monta uma missão ATIVA a partir de dias decorridos + faltas --
+function buildActiveUserMissionView(
+  idSuffix: string,
+  missionId: string,
+  startDaysAgo: number,
+  missedDayIndexes: number[], // 1-indexado, dias que ficaram sem check-in
+): UserMissionView {
+  const mission = catalogMission(missionId);
+  const startDate = daysAgo(startDaysAgo);
+  const checkInDates: string[] = [];
+  for (let day = 1; day <= startDaysAgo; day++) {
+    if (!missedDayIndexes.includes(day)) checkInDates.push(addDays(startDate, day - 1));
+  }
+
+  const userMission: UserMission = {
+    id: `user-mission-${idSuffix}`,
+    user_id: 'mock-user',
+    mission_id: mission.id,
+    start_date: startDate,
+    duration_days: mission.duration_days,
+    allowed_fails: mission.allowed_fails,
+    status: 'active',
+    fails_count: 0, // recalculado abaixo via computeMissionState
+    created_at: startDate,
+  };
+
+  const today = new Date().toLocaleDateString('en-CA');
+  const state = computeMissionState(userMission, checkInDates, today);
+
+  return {
+    userMission: { ...userMission, status: state.status, fails_count: state.fails_count },
+    mission,
+    state,
+    checkInDates,
+  };
 }
 
-function addDays(base: string, n: number): string {
-  const d = new Date(`${base}T00:00:00`);
-  d.setDate(d.getDate() + n);
-  return toLocalDateString(d);
+// -- helper: monta uma missão do HISTÓRICO (terminal, estado congelado) --
+function buildHistoryUserMissionView(
+  idSuffix: string,
+  missionId: string,
+  startDaysAgo: number,
+  daysRun: number, // quantos dias a missão durou até assentar
+  failsCount: number,
+  status: 'completed' | 'failed' | 'abandoned',
+): UserMissionView {
+  const mission = catalogMission(missionId);
+  const startDate = daysAgo(startDaysAgo);
+  const checkInDates: string[] = [];
+  for (let day = 1; day <= daysRun; day++) {
+    // simula faltas espalhadas nos primeiros dias, sem sobrepor o total
+    if (day > failsCount) checkInDates.push(addDays(startDate, day - 1));
+  }
+
+  const userMission: UserMission = {
+    id: `user-mission-${idSuffix}`,
+    user_id: 'mock-user',
+    mission_id: mission.id,
+    start_date: startDate,
+    duration_days: mission.duration_days,
+    allowed_fails: mission.allowed_fails,
+    status,
+    fails_count: failsCount,
+    created_at: startDate,
+  };
+
+  return {
+    userMission,
+    mission,
+    state: { status, fails_count: failsCount, day_number: Math.min(daysRun, mission.duration_days) },
+    checkInDates,
+  };
 }
 
-// -- catálogo mínimo (subset do seed real, CONTEXT.md Seção 12) ----------
-const mockMissionFitness: Mission = {
-  id: 'mission-fitness-30min',
-  title: 'Treinar 30 Minutos por Dia',
-  description: 'Movimente o corpo por meia hora, todo santo dia.',
-  category: 'fitness',
-  icon_name: 'dumbbell',
-  duration_days: 30,
-  allowed_fails: 3,
-  is_published: true,
-  created_at: daysAgo(60),
+// -- histórico compartilhado pelos cenários não-vazios ---------------------
+const sharedHistory: UserMissionView[] = [
+  buildHistoryUserMissionView('h1', 'mission-fitness-10k-steps', 60, 30, 2, 'completed'),
+  buildHistoryUserMissionView('h2', 'mission-study-read20', 90, 10, 4, 'failed'),
+  buildHistoryUserMissionView('h3', 'mission-finance-no-impulse', 45, 5, 0, 'abandoned'),
+];
+
+// -- cenários ---------------------------------------------------------------
+const scenarios: Record<MockScenario, UserMissionView[]> = {
+  empty: [],
+
+  single_active: [
+    // "Dia 12 de 30", 1 falta (dia 5), check-in de hoje pendente
+    buildActiveUserMissionView('1', 'mission-fitness-30min', 11, [5]),
+    ...sharedHistory,
+  ],
+
+  multiple_active: [
+    buildActiveUserMissionView('1', 'mission-fitness-30min', 11, [5]),
+    // "Dia 5 de 30", 0 faltas ainda
+    buildActiveUserMissionView('2', 'mission-sleep-23h', 4, []),
+    ...sharedHistory,
+  ],
+
+  at_cap: [
+    buildActiveUserMissionView('1', 'mission-fitness-30min', 11, [5]),
+    buildActiveUserMissionView('2', 'mission-sleep-23h', 4, []),
+    // "Dia 3 de 30", 1 falta (dia 2) — terceira e última vaga do limite mock
+    buildActiveUserMissionView('3', 'mission-study-1h', 2, [2]),
+    ...sharedHistory,
+  ],
 };
 
-const mockMissionSleep: Mission = {
-  id: 'mission-sleep-23h',
-  title: 'Dormir Antes das 23h',
-  description: 'Durma cedo e acorde com mais energia.',
-  category: 'sleep',
-  icon_name: 'moon',
-  duration_days: 30,
-  allowed_fails: 3,
-  is_published: true,
-  created_at: daysAgo(60),
-};
-
-// -- cenário 1: missão em andamento, "Dia 12 de 30", 1 falta usada -------
-// day_number = (hoje - start_date + 1) = 12  =>  start_date = hoje - 11
-// dias decorridos (excluindo hoje) = 11; 1 falta => 10 check-ins antes de
-// hoje; falta caiu no dia 5. Hoje (dia 12) ainda sem check-in — testa o
-// botão no estado "pendente".
-const scenario1Start = daysAgo(11);
-const scenario1MissedDayIndex = 5; // 1-indexado
-const scenario1CheckIns: CheckIn[] = Array.from({ length: 11 }, (_, i) => i + 1)
-  .filter((day) => day !== scenario1MissedDayIndex)
-  .map((day, idx) => ({
-    id: `checkin-1-${idx}`,
-    user_mission_id: 'user-mission-1',
-    check_in_date: addDays(scenario1Start, day - 1),
-    created_at: addDays(scenario1Start, day - 1),
-  }));
-
-const scenario1UserMission: UserMission = {
-  id: 'user-mission-1',
-  user_id: 'mock-user',
-  mission_id: mockMissionFitness.id,
-  start_date: scenario1Start,
-  duration_days: 30,
-  allowed_fails: 3,
-  status: 'active',
-  fails_count: 1,
-  created_at: scenario1Start,
-};
-
-const inProgress: ActiveMissionView = {
-  userMission: scenario1UserMission,
-  mission: mockMissionFitness,
-  state: { status: 'active', fails_count: 1, day_number: 12 },
-  checkInDates: scenario1CheckIns.map((c) => c.check_in_date),
-};
-
-// -- cenário 2: missão concluída, 28/30 check-ins (2 faltas, dentro do
-// limite de 3), janela de 30 dias já fechada ------------------------------
-const scenario2Start = daysAgo(31);
-const scenario2MissedDays = [10, 20]; // 1-indexado
-const scenario2CheckIns: CheckIn[] = Array.from({ length: 30 }, (_, i) => i + 1)
-  .filter((day) => !scenario2MissedDays.includes(day))
-  .map((day, idx) => ({
-    id: `checkin-2-${idx}`,
-    user_mission_id: 'user-mission-2',
-    check_in_date: addDays(scenario2Start, day - 1),
-    created_at: addDays(scenario2Start, day - 1),
-  }));
-
-const scenario2UserMission: UserMission = {
-  id: 'user-mission-2',
-  user_id: 'mock-user',
-  mission_id: mockMissionSleep.id,
-  start_date: scenario2Start,
-  duration_days: 30,
-  allowed_fails: 3,
-  status: 'completed',
-  fails_count: 2,
-  created_at: scenario2Start,
-};
-
-const completed: ActiveMissionView = {
-  userMission: scenario2UserMission,
-  mission: mockMissionSleep,
-  state: { status: 'completed', fails_count: 2, day_number: 30 },
-  checkInDates: scenario2CheckIns.map((c) => c.check_in_date),
-};
-
-const scenarios: Record<MockScenario, ActiveMissionView | null> = {
-  in_progress: inProgress,
-  completed,
-  none: null,
-};
-
-/** O que a tela Home consumiria de get_user_mission_state() + join. */
-export const activeMissionMock = scenarios[ACTIVE_SCENARIO];
+/** O que a camada de dados (MissionsProvider) carregaria de get_user_mission_state() + join. */
+export const initialUserMissions: UserMissionView[] = scenarios[ACTIVE_SCENARIO];
