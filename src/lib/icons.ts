@@ -14,6 +14,7 @@ import {
   Dumbbell,
   Flame,
   Footprints,
+  House,
   Moon,
   MonitorOff,
   PiggyBank,
@@ -47,6 +48,7 @@ export const CATALOG_ICONS: Record<string, LucideIcon> = {
 export const DEFAULT_CATALOG_ICON: LucideIcon = Compass;
 
 export const UiIcons = {
+  home: House,
   tip: Sparkles,
   profile: User,
   catalog: Compass,

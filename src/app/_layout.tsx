@@ -23,7 +23,7 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: Colors.light.background },
           }}>
           <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="home" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="mission/[id]" options={{ headerShown: false }} />
         </Stack>
       </MissionsProvider>

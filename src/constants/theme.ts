@@ -72,5 +72,11 @@ export const Radius = {
   lg: 24,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+// Barra de navegação flutuante (tabs)/_layout.tsx: altura + inset lateral
+// da barra em si, e a folga que as telas dentro do grupo (tabs) precisam
+// reservar no rodapé pra não ficar encoberta (a barra é position:absolute).
+export const TabBarHeight = 64;
+export const TabBarSideInset = 20;
+export const TabBarClearance = TabBarHeight + Spacing.five;
+
 export const MaxContentWidth = 800;

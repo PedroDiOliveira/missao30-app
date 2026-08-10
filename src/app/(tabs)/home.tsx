@@ -10,7 +10,7 @@ import { SuggestedMissionsCard } from '@/components/dashboard/suggested-missions
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AppMark } from '@/components/ui/app-mark';
-import { Spacing } from '@/constants/theme';
+import { Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
 
 /**
@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacing.four,
+    paddingBottom: TabBarClearance,
     gap: Spacing.four,
     maxWidth: 480,
     width: '100%',
