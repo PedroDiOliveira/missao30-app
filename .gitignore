@@ -42,5 +42,7 @@ example
 /ios
 /android
 
-# contexto do projeto (não deve ir pro repo)
+# contexto/config de agentes de IA (não deve ir pro repo — só código no GitHub)
 CLAUDE.md
+AGENTS.md
+.claude/
