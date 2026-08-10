@@ -9,6 +9,7 @@ import { ShortcutsCard } from '@/components/dashboard/shortcuts-card';
 import { SuggestedMissionsCard } from '@/components/dashboard/suggested-missions-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppMark } from '@/components/ui/app-mark';
 import { Spacing } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
 
@@ -30,9 +31,12 @@ export default function DashboardScreen() {
             <ThemedText type="small" themeColor="textSecondary">
               Bem-vindo de volta
             </ThemedText>
-            <ThemedText type="title" style={styles.title}>
-              Missão30
-            </ThemedText>
+            <View style={styles.brandRow}>
+              <AppMark size={34} />
+              <ThemedText type="title" style={styles.title}>
+                Missão30
+              </ThemedText>
+            </View>
           </View>
 
           <SettlementNoticeBanner notices={settlementNotices} onDismiss={dismissNotice} />
@@ -68,7 +72,12 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   header: {
-    gap: Spacing.half,
+    gap: Spacing.one,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   title: {
     fontSize: 28,
