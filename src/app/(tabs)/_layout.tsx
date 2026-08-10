@@ -41,7 +41,7 @@ export default function TabsLayout() {
         },
         tabBarBackground: () => (
           <View style={StyleSheet.absoluteFill}>
-            <BlurView tint="light" intensity={90} style={StyleSheet.absoluteFill} />
+            <BlurView tint="light" intensity={35} style={StyleSheet.absoluteFill} />
             <View style={[StyleSheet.absoluteFill, styles.tint]} />
           </View>
         ),
@@ -74,7 +74,7 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   tint: {
     backgroundColor: Colors.light.background,
-    opacity: 0.55,
+    opacity: 0.12,
   },
   label: {
     fontSize: 11,
