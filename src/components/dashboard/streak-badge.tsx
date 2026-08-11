@@ -12,10 +12,10 @@ import {
 } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, G } from 'react-native-svg';
 
 import { YearActivityGraph } from '@/components/dashboard/year-activity-graph';
 import { ThemedText } from '@/components/themed-text';
+import { StreakRingIcon } from '@/components/ui/streak-ring-icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { buildCalendarYearGrid, buildCheckInCountsByDate } from '@/lib/activity';
@@ -35,28 +35,6 @@ const CARD_VERTICAL_PADDING = Spacing.five;
 const GRAPH_PAGE_PADDING = 16;
 const STREAK_PAGE_PADDING = Spacing.five;
 const PAGE_COUNT = 2;
-
-/** Mini anel de progresso — mesmo motivo do AppMark e do ícone de Missões,
- * de propósito: reforça a marca em vez de recorrer ao ícone de fogo que
- * praticamente todo app de streak usa (e que carrega uma conotação de
- * "não deixe apagar" meio oposta à filosofia de tolerância do produto). */
-function StreakRingIcon({ color, size = 18 }: { color: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <G transform="rotate(-90 12 12)">
-        <Circle
-          cx={12}
-          cy={12}
-          r={9}
-          stroke={color}
-          strokeWidth={2.5}
-          strokeLinecap="round"
-          strokeDasharray="42 14.1"
-        />
-      </G>
-    </Svg>
-  );
-}
 
 /** Badge de sequência no canto superior — usa a mesma definição de
  * "streak perdoador" já estabelecida (CONTEXT.md Decisão #2, calculada em

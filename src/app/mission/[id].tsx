@@ -6,18 +6,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProgressGrid } from '@/components/mission/progress-grid';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppMark } from '@/components/ui/app-mark';
 import { CheckRingIcon } from '@/components/ui/check-ring-icon';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { StreakRingIcon } from '@/components/ui/streak-ring-icon';
+import { SurfaceCard } from '@/components/ui/surface-card';
+import { Radius, Spacing } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
+import { useTheme } from '@/hooks/use-theme';
+import { CATEGORY_LABEL } from '@/lib/catalog';
 import { todayLocal } from '@/lib/date';
-import type { MissionCategory } from '@/lib/types';
-
-const CATEGORY_LABEL: Record<MissionCategory, string> = {
-  study: 'Estudos',
-  fitness: 'Treino',
-  sleep: 'Sono',
-  finance: 'Finanças',
-};
 
 /**
  * Detalhe de uma missão — corpo quase idêntico ao antigo /home de missão
@@ -25,9 +22,15 @@ const CATEGORY_LABEL: Record<MissionCategory, string> = {
  * mock único. Dona da lógica de redirect por-missão (CONTEXT.md Seção 7):
  * id não encontrado → /home; encontrado mas não mais ativo → /report/[id];
  * encontrado e ativo → renderiza aqui.
+ *
+ * Barra superior com a marca do app (em vez de um ícone de voltar genérico)
+ * — toque nela volta pro menu, mantendo a mesma linguagem de marca usada em
+ * outros lugares do app (AppMark, StreakRingIcon) em vez de recorrer a um
+ * componente de navegação padrão sem personalidade.
  */
 export default function MissionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const theme = useTheme();
   const { getMissionById, checkIn, abandonMission } = useMissionsData();
   const mission = getMissionById(id);
 
@@ -42,6 +45,14 @@ export default function MissionDetailScreen() {
   const today = todayLocal();
   const alreadyCheckedInToday = checkInDates.includes(today);
   const livesRemaining = userMission.allowed_fails - state.fails_count;
+
+  // Cobre o caso de chegar aqui sem histórico de navegação (link direto,
+  // recarregar a página no web) — o toque na marca sempre volta pro menu,
+  // nunca fica sem efeito.
+  function handleGoToMenu() {
+    if (router.canGoBack()) router.back();
+    else router.replace('/home');
+  }
 
   function handleCheckIn() {
     if (alreadyCheckedInToday) return;
@@ -71,6 +82,14 @@ export default function MissionDetailScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Pressable
+            onPress={handleGoToMenu}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar ao início">
+            <AppMark size={32} />
+          </Pressable>
+
           <View style={styles.header}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.category}>
               {CATEGORY_LABEL[missionInfo.category].toUpperCase()}
@@ -83,34 +102,37 @@ export default function MissionDetailScreen() {
             </ThemedText>
           </View>
 
-          <View style={styles.livesRow}>
-            <View style={styles.livesDots}>
-              {Array.from({ length: userMission.allowed_fails }, (_, i) => i + 1).map((i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.lifeDot,
-                    { backgroundColor: i <= livesRemaining ? Colors.light.success : Colors.light.warning },
-                  ]}
-                />
-              ))}
+          <SurfaceCard style={styles.progressCard}>
+            <View style={styles.livesRow}>
+              <View style={styles.livesDots}>
+                {Array.from({ length: userMission.allowed_fails }, (_, i) => i + 1).map((i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.lifeDot,
+                      { backgroundColor: i <= livesRemaining ? theme.success : theme.warning },
+                    ]}
+                  />
+                ))}
+              </View>
+              <ThemedText type="small" themeColor="textSecondary">
+                {livesRemaining} de {userMission.allowed_fails} faltas disponíveis
+              </ThemedText>
             </View>
-            <ThemedText type="small" themeColor="textSecondary">
-              {livesRemaining} de {userMission.allowed_fails} faltas disponíveis
-            </ThemedText>
-          </View>
 
-          <ProgressGrid
-            durationDays={userMission.duration_days}
-            dayNumber={state.day_number}
-            startDate={userMission.start_date}
-            checkInDates={checkInDates}
-            isActive
-          />
+            <ProgressGrid
+              durationDays={userMission.duration_days}
+              dayNumber={state.day_number}
+              startDate={userMission.start_date}
+              checkInDates={checkInDates}
+              isActive
+            />
 
-          <View style={styles.streakRow}>
-            <ThemedText type="smallBold">🔥 Sequência: {checkInDates.length} check-ins</ThemedText>
-          </View>
+            <View style={styles.streakRow}>
+              <StreakRingIcon color={theme.secondary} size={16} />
+              <ThemedText type="smallBold">Sequência: {checkInDates.length} check-ins</ThemedText>
+            </View>
+          </SurfaceCard>
 
           <Pressable
             accessibilityRole="button"
@@ -119,17 +141,15 @@ export default function MissionDetailScreen() {
             accessibilityLabel={alreadyCheckedInToday ? 'Check-in já feito hoje' : 'Fazer check-in do dia'}
             style={({ pressed }) => [
               styles.checkInButton,
-              alreadyCheckedInToday && styles.checkInButtonDone,
+              { backgroundColor: alreadyCheckedInToday ? theme.backgroundElement : theme.primary },
               pressed && !alreadyCheckedInToday && styles.checkInButtonPressed,
             ]}>
             <CheckRingIcon
               done={alreadyCheckedInToday}
-              color={alreadyCheckedInToday ? Colors.light.secondary : Colors.light.textOnDark}
+              color={alreadyCheckedInToday ? theme.secondary : theme.textOnDark}
               size={22}
             />
-            <ThemedText
-              type="smallBold"
-              themeColor={alreadyCheckedInToday ? 'secondary' : 'textOnDark'}>
+            <ThemedText type="smallBold" themeColor={alreadyCheckedInToday ? 'secondary' : 'textOnDark'}>
               Check-in do Dia
             </ThemedText>
           </Pressable>
@@ -169,6 +189,9 @@ const styles = StyleSheet.create({
     fontSize: 26,
     lineHeight: 32,
   },
+  progressCard: {
+    gap: Spacing.four,
+  },
   livesRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -184,11 +207,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   streakRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
   },
   checkInButton: {
     flexDirection: 'row',
-    backgroundColor: Colors.light.primary,
     borderRadius: Radius.lg,
     height: 64,
     alignItems: 'center',
@@ -197,9 +222,6 @@ const styles = StyleSheet.create({
   },
   checkInButtonPressed: {
     opacity: 0.85,
-  },
-  checkInButtonDone: {
-    backgroundColor: Colors.light.backgroundElement,
   },
   abandonLink: {
     alignItems: 'center',
