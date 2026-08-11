@@ -19,10 +19,12 @@ import {
   PiggyBank,
   Plus,
   Quote,
+  Share2,
   TrendingUp,
   Trophy,
   User,
   Wallet,
+  X,
   type LucideIcon,
 } from 'lucide-react-native';
 
@@ -55,4 +57,6 @@ export const UiIcons = {
   add: Plus,
   chevronRight: ChevronRight,
   trophy: Trophy,
+  share: Share2,
+  close: X,
 } satisfies Record<string, LucideIcon>;
