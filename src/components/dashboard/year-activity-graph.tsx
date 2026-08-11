@@ -1,18 +1,17 @@
-import { useEffect, useRef } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { DayCell } from '@/lib/activity';
 
-const CELL_SIZE = 10;
-const CELL_GAP = 3;
-const COLUMN_WIDTH = CELL_SIZE + CELL_GAP;
+const GAP = 2;
 const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 interface YearActivityGraphProps {
   weeks: DayCell[][];
+  /** Largura disponível pro grid inteiro caber sem precisar de scroll. */
+  width: number;
 }
 
 function monthOf(dateStr: string): number {
@@ -20,88 +19,72 @@ function monthOf(dateStr: string): number {
 }
 
 /**
- * Gráfico de atividade anual estilo GitHub: 53 colunas (semanas) × 7 linhas
- * (dias), cada quadrado é um dia, mais escuro quanto mais check-ins teve.
- * Legenda: só os nomes dos meses, posicionados por baixo da coluna onde
- * cada mês começa — sem eixo de dia da semana nem contagem por célula.
+ * Gráfico de atividade anual estilo GitHub: uma coluna por semana, 7 linhas
+ * (dias), cada quadrado mais escuro quanto mais check-ins teve. O tamanho
+ * da célula é calculado a partir de `width` pra o ano inteiro (janeiro a
+ * dezembro, ~53 colunas) caber de uma vez, sem cortar meses.
+ * Legenda: só os nomes dos meses, por baixo da coluna onde cada um começa.
  */
-export function YearActivityGraph({ weeks }: YearActivityGraphProps) {
+export function YearActivityGraph({ weeks, width }: YearActivityGraphProps) {
   const theme = useTheme();
-  const scrollRef = useRef<ScrollView>(null);
-  const gridWidth = weeks.length * COLUMN_WIDTH;
-
-  useEffect(() => {
-    // Abre já mostrando os meses mais recentes, como o GitHub faz.
-    const id = requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: false }));
-    return () => cancelAnimationFrame(id);
-  }, []);
+  const columns = weeks.length;
+  const cellSize = Math.max((width - (columns - 1) * GAP) / columns, 3);
+  const columnWidth = cellSize + GAP;
+  const gridWidth = columns * columnWidth - GAP;
 
   return (
-    <ScrollView ref={scrollRef} horizontal showsHorizontalScrollIndicator={false}>
-      <View style={{ width: gridWidth }}>
-        <View style={styles.grid}>
-          {weeks.map((week, weekIndex) => (
-            <View key={weekIndex} style={styles.column}>
-              {week.map((day) => (
-                <View
-                  key={day.date}
-                  style={[
-                    styles.cell,
-                    day.isFuture
-                      ? styles.cellFuture
-                      : {
-                          backgroundColor: day.count > 0 ? theme.success : theme.locked,
-                          opacity: day.count > 0 ? Math.min(0.5 + day.count * 0.2, 1) : 1,
-                        },
-                  ]}
-                />
-              ))}
-            </View>
-          ))}
-        </View>
-
-        <View style={[styles.monthRow, { width: gridWidth }]}>
-          {weeks.map((week, weekIndex) => {
-            if (weekIndex === 0) return null;
-            const firstRealDay = week.find((d) => !d.isFuture);
-            if (!firstRealDay) return null;
-            const prevWeek = weeks[weekIndex - 1];
-            const prevFirstRealDay = prevWeek.find((d) => !d.isFuture) ?? prevWeek[0];
-            if (monthOf(firstRealDay.date) === monthOf(prevFirstRealDay.date)) return null;
-
-            return (
-              <ThemedText
-                key={weekIndex}
-                type="small"
-                themeColor="textSecondary"
-                style={[styles.monthLabel, { left: weekIndex * COLUMN_WIDTH }]}>
-                {MONTH_LABELS[monthOf(firstRealDay.date)]}
-              </ThemedText>
-            );
-          })}
-        </View>
+    <View style={{ width: gridWidth }}>
+      <View style={styles.grid}>
+        {weeks.map((week, weekIndex) => (
+          <View key={weekIndex} style={{ gap: GAP }}>
+            {week.map((day) => (
+              <View
+                key={day.date}
+                style={[
+                  { width: cellSize, height: cellSize, borderRadius: Math.min(cellSize / 4, 2) },
+                  day.inYear
+                    ? {
+                        backgroundColor: day.count > 0 ? theme.success : theme.locked,
+                        opacity: day.count > 0 ? Math.min(0.5 + day.count * 0.2, 1) : 1,
+                      }
+                    : styles.cellOutOfYear,
+                ]}
+              />
+            ))}
+          </View>
+        ))}
       </View>
-    </ScrollView>
+
+      <View style={[styles.monthRow, { width: gridWidth }]}>
+        {weeks.map((week, weekIndex) => {
+          if (weekIndex === 0) return null;
+          const firstRealDay = week.find((d) => d.inYear);
+          if (!firstRealDay) return null;
+          const prevWeek = weeks[weekIndex - 1];
+          const prevFirstRealDay = prevWeek.find((d) => d.inYear) ?? prevWeek[0];
+          if (monthOf(firstRealDay.date) === monthOf(prevFirstRealDay.date)) return null;
+
+          return (
+            <ThemedText
+              key={weekIndex}
+              type="small"
+              themeColor="textSecondary"
+              style={[styles.monthLabel, { left: weekIndex * columnWidth }]}>
+              {MONTH_LABELS[monthOf(firstRealDay.date)]}
+            </ThemedText>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
-    gap: CELL_GAP,
+    gap: GAP,
   },
-  column: {
-    gap: CELL_GAP,
-  },
-  cell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
-    borderRadius: 2,
-  },
-  cellFuture: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
-    borderRadius: 2,
+  cellOutOfYear: {
     backgroundColor: 'transparent',
   },
   monthRow: {
@@ -111,6 +94,6 @@ const styles = StyleSheet.create({
   monthLabel: {
     position: 'absolute',
     top: 0,
-    fontSize: 10,
+    fontSize: 9,
   },
 });

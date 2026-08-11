@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -17,7 +18,7 @@ import { YearActivityGraph } from '@/components/dashboard/year-activity-graph';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { buildCheckInCountsByDate, buildYearGrid } from '@/lib/activity';
+import { buildCalendarYearGrid, buildCheckInCountsByDate } from '@/lib/activity';
 import { UiIcons } from '@/lib/icons';
 import { computeQuickStats } from '@/lib/stats';
 import type { UserMissionView } from '@/lib/types';
@@ -28,9 +29,11 @@ interface StreakBadgeProps {
 }
 
 const ANIMATION_DURATION = 220;
-const CARD_WIDTH = 340;
-const CARD_PADDING = Spacing.five;
-const PAGE_WIDTH = CARD_WIDTH - CARD_PADDING * 2;
+const MODAL_MARGIN = 16; // de cada lado — reduzido pra sobrar mais espaço pro gráfico
+const CARD_MAX_WIDTH = 480; // teto pra telas grandes (tablet/web) não deixar o card gigante
+const CARD_VERTICAL_PADDING = Spacing.five;
+const GRAPH_PAGE_PADDING = 16;
+const STREAK_PAGE_PADDING = Spacing.five;
 const PAGE_COUNT = 2;
 
 /** Mini anel de progresso — mesmo motivo do AppMark e do ícone de Missões,
@@ -62,19 +65,25 @@ function StreakRingIcon({ color, size = 18 }: { color: string; size?: number }) 
  *
  * Tocável: abre um modal com um carrossel de "moldes" pra compartilhar —
  * desliza pro lado pra ver os outros. O primeiro é o gráfico de atividade
- * anual (estilo GitHub); o segundo é o número da sequência em destaque.
- * O botão de compartilhar fica fixo embaixo, fora do carrossel — a
- * geração da imagem/story em si ainda não existe, só o botão já está no
- * lugar certo. */
+ * do ano-calendário inteiro (janeiro a dezembro, estilo GitHub, sem
+ * scroll — a largura do card se ajusta à tela pra caber tudo de uma vez);
+ * o segundo é o número da sequência em destaque. O botão de compartilhar
+ * fica fixo embaixo, fora do carrossel — a geração da imagem/story em si
+ * ainda não existe, só o botão já está no lugar certo. */
 export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const { currentBestStreak } = computeQuickStats(activeMissions, missionHistory);
   const [modalVisible, setModalVisible] = useState(false);
   const [page, setPage] = useState(0);
 
   const progress = useSharedValue(0);
-  const weeks = buildYearGrid(buildCheckInCountsByDate(activeMissions, missionHistory));
+  const currentYear = new Date().getFullYear();
+  const weeks = buildCalendarYearGrid(buildCheckInCountsByDate(activeMissions, missionHistory), currentYear);
+
+  const cardWidth = Math.min(windowWidth - MODAL_MARGIN * 2, CARD_MAX_WIDTH);
+  const graphWidth = cardWidth - GRAPH_PAGE_PADDING * 2;
 
   function openModal() {
     setModalVisible(true);
@@ -93,7 +102,7 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
   }
 
   function handleScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    const next = Math.round(event.nativeEvent.contentOffset.x / PAGE_WIDTH);
+    const next = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
     setPage(Math.max(0, Math.min(next, PAGE_COUNT - 1)));
   }
 
@@ -134,7 +143,7 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
           <Animated.View
             style={[
               styles.card,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+              { width: cardWidth, backgroundColor: theme.backgroundElement, borderColor: theme.border },
               cardStyle,
             ]}>
             <Pressable
@@ -150,20 +159,23 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={handleScrollEnd}
-              style={styles.pager}>
-              <View style={styles.page}>
+              style={[styles.pager, { width: cardWidth }]}>
+              <View style={[styles.page, { width: cardWidth, paddingHorizontal: GRAPH_PAGE_PADDING }]}>
                 <View style={styles.pageHeader}>
                   <UiIcons.stats size={18} color={theme.primary} />
                   <ThemedText type="smallBold" themeColor="secondary" style={styles.eyebrow}>
-                    SUA ATIVIDADE
+                    SUA ATIVIDADE EM {currentYear}
                   </ThemedText>
                 </View>
-                <View style={styles.graphWrap}>
-                  <YearActivityGraph weeks={weeks} />
-                </View>
+                <YearActivityGraph weeks={weeks} width={graphWidth} />
               </View>
 
-              <View style={[styles.page, styles.streakPage]}>
+              <View
+                style={[
+                  styles.page,
+                  styles.streakPage,
+                  { width: cardWidth, paddingHorizontal: STREAK_PAGE_PADDING },
+                ]}>
                 <View style={styles.iconBadge}>
                   <StreakRingIcon color={theme.primary} size={32} />
                 </View>
@@ -227,14 +239,12 @@ const styles = StyleSheet.create({
   },
   modalWrap: {
     alignItems: 'center',
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: MODAL_MARGIN,
   },
   card: {
-    width: '100%',
-    maxWidth: CARD_WIDTH,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    paddingVertical: CARD_PADDING,
+    paddingVertical: CARD_VERTICAL_PADDING,
     alignItems: 'center',
     gap: Spacing.three,
   },
@@ -246,12 +256,9 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   pager: {
-    width: PAGE_WIDTH,
     flexGrow: 0,
   },
   page: {
-    width: PAGE_WIDTH,
-    paddingHorizontal: CARD_PADDING,
     alignItems: 'center',
   },
   pageHeader: {
@@ -263,9 +270,6 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     letterSpacing: 0.5,
-  },
-  graphWrap: {
-    alignSelf: 'stretch',
   },
   streakPage: {
     gap: Spacing.one,
@@ -304,6 +308,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     borderRadius: Radius.md,
     alignSelf: 'stretch',
-    marginHorizontal: CARD_PADDING,
+    marginHorizontal: Spacing.four,
   },
 });

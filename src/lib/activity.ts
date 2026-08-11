@@ -5,13 +5,13 @@
  * como intensidade 2, não dois dias separados.
  */
 
-import { addDays, todayLocal } from '@/lib/date';
+import { toLocalDateString } from '@/lib/date';
 import type { UserMissionView } from '@/lib/types';
 
 export interface DayCell {
   date: string; // YYYY-MM-DD
   count: number; // quantas missões tiveram check-in nesse dia
-  isFuture: boolean; // dia depois de hoje, existe só pra completar a semana
+  inYear: boolean; // false = dia de preenchimento só pra fechar a semana (dez/jan vizinhos)
 }
 
 export function buildCheckInCountsByDate(
@@ -28,20 +28,30 @@ export function buildCheckInCountsByDate(
 }
 
 /**
- * Gera 53 semanas completas (domingo a sábado) terminando na semana atual —
- * mesma janela que o gráfico de contribuições do GitHub usa. Dias depois de
- * hoje (pra fechar a semana corrente) vêm marcados como `isFuture`.
+ * Gera o ano-calendário completo (1º de janeiro a 31 de dezembro de `year`)
+ * em semanas inteiras (domingo a sábado) — sempre o ano inteiro, não uma
+ * janela rolante de 365 dias. Os dias de dezembro/janeiro vizinhos que
+ * sobram pra fechar a primeira/última semana vêm marcados `inYear: false`.
  */
-export function buildYearGrid(counts: Map<string, number>, today: string = todayLocal()): DayCell[][] {
-  const todayDow = new Date(`${today}T00:00:00`).getDay(); // 0 = domingo
-  const daysUntilWeekEnd = 6 - todayDow;
-  const totalDays = 53 * 7;
-  const startOffset = totalDays - 1 - daysUntilWeekEnd;
+export function buildCalendarYearGrid(counts: Map<string, number>, year: number): DayCell[][] {
+  const jan1 = new Date(year, 0, 1);
+  const dec31 = new Date(year, 11, 31);
+
+  const start = new Date(jan1);
+  start.setDate(start.getDate() - jan1.getDay());
+
+  const end = new Date(dec31);
+  end.setDate(end.getDate() + (6 - dec31.getDay()));
 
   const cells: DayCell[] = [];
-  for (let i = -startOffset; i <= daysUntilWeekEnd; i++) {
-    const date = addDays(today, i);
-    cells.push({ date, count: counts.get(date) ?? 0, isFuture: i > 0 });
+  const cursor = new Date(start);
+  while (cursor <= end) {
+    cells.push({
+      date: toLocalDateString(cursor),
+      count: counts.get(toLocalDateString(cursor)) ?? 0,
+      inYear: cursor.getFullYear() === year,
+    });
+    cursor.setDate(cursor.getDate() + 1);
   }
 
   const weeks: DayCell[][] = [];
