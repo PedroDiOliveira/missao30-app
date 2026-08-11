@@ -1,69 +1,75 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { MedalRingIcon } from '@/components/ui/medal-ring-icon';
 import { Radius, Spacing } from '@/constants/theme';
-import type { ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { UiIcons } from '@/lib/icons';
-import type { CatalogStatus } from '@/lib/catalog';
+import type { MissionAchievement } from '@/lib/catalog';
+import type { MedalTier } from '@/lib/medals';
 
 interface MissionStatusBadgeProps {
-  status: CatalogStatus;
-  dayNumber?: number;
-  durationDays?: number;
+  achievement: MissionAchievement;
 }
 
-const STATUS_LABEL: Record<Exclude<CatalogStatus, 'available'>, string> = {
-  active: 'Ativa',
-  completed: 'Concluída',
-  // Linguagem neutra de propósito (CONTEXT.md Seção 1) — o catálogo não usa
-  // "Falhou", pra não reintroduzir a mecânica de culpa que o produto existe
-  // pra evitar.
-  failed: 'Não completada',
-  abandoned: 'Abandonada',
-};
-
-/** Selo de status de uma missão no catálogo — usado pelo carrossel e pela
- * grade (CONTEXT.md Seção 8, Tela 2: toda missão aparece sempre, com selo). */
-export function MissionStatusBadge({ status, dayNumber, durationDays }: MissionStatusBadgeProps) {
+/** Selo do catálogo — CONTEXT.md Log de Decisões #16: linguagem de
+ * conquista, não de status. Nunca rotula um resultado passado ruim (nem
+ * "falhou", nem "abandonada") — ou convida a tentar, ou celebra uma
+ * medalha, ou não diz nada. */
+export function MissionStatusBadge({ achievement }: MissionStatusBadgeProps) {
   const theme = useTheme();
-  if (status === 'available') return null;
 
-  const label =
-    status === 'active' && dayNumber !== undefined && durationDays !== undefined
-      ? `Ativa · Dia ${dayNumber}/${durationDays}`
-      : STATUS_LABEL[status];
+  if (achievement.kind === 'no_medal') return null;
 
-  const backgroundColor: Record<Exclude<CatalogStatus, 'available'>, string> = {
-    active: theme.secondary,
-    completed: theme.success,
-    failed: theme.border,
-    abandoned: theme.border,
+  if (achievement.kind === 'never_tried') {
+    return <View style={[styles.dot, { backgroundColor: theme.primary }]} accessibilityLabel="Nunca tentada" />;
+  }
+
+  if (achievement.kind === 'active') {
+    return (
+      <View style={[styles.pill, { backgroundColor: theme.secondary }]}>
+        <ThemedText type="smallBold" themeColor="textOnDark" style={styles.pillLabel}>
+          Dia {achievement.dayNumber}/{achievement.durationDays}
+        </ThemedText>
+      </View>
+    );
+  }
+
+  // 'medal' — sem pill de fundo, de propósito: é a mesma linguagem de
+  // "anel colorido + número" que o perfil já usa pras contagens por nível,
+  // aqui aplicada a uma missão específica.
+  const tierColor: Record<MedalTier, string> = {
+    1: theme.secondary,
+    2: theme.success,
+    3: theme.warning,
   };
-  const textColor: ThemeColor = status === 'failed' || status === 'abandoned' ? 'textSecondary' : 'textOnDark';
 
   return (
-    <View style={[styles.badge, { backgroundColor: backgroundColor[status] }]}>
-      {status === 'completed' && <UiIcons.trophy size={11} color={theme.textOnDark} />}
-      <ThemedText type="smallBold" themeColor={textColor} style={styles.label}>
-        {label}
-      </ThemedText>
+    <View style={styles.medalRow}>
+      <MedalRingIcon tier={achievement.tier} color={tierColor[achievement.tier]} size={16} />
+      <ThemedText type="smallBold">×{achievement.count}</ThemedText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  pill: {
     alignSelf: 'flex-start',
-    gap: Spacing.half,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.half,
     borderRadius: Radius.sm,
   },
-  label: {
+  pillLabel: {
     fontSize: 11,
     lineHeight: 14,
+  },
+  medalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.half,
   },
 });

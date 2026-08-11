@@ -4,7 +4,7 @@ import { MissionStatusBadge } from '@/components/catalog/mission-status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { CATEGORY_LABEL, getCatalogStatus } from '@/lib/catalog';
+import { CATEGORY_LABEL, getMissionAchievement } from '@/lib/catalog';
 import { CATALOG_ICONS, DEFAULT_CATALOG_ICON } from '@/lib/icons';
 import type { Mission, UserMissionView } from '@/lib/types';
 
@@ -37,7 +37,7 @@ export function CatalogHeroCarousel({ missions, allUserMissions, onSelect }: Cat
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={[styles.content, { paddingHorizontal: SIDE_INSET }]}>
       {missions.map((mission) => {
-        const { status, latest } = getCatalogStatus(mission.id, allUserMissions);
+        const achievement = getMissionAchievement(mission.id, allUserMissions);
         const Icon = CATALOG_ICONS[mission.icon_name] ?? DEFAULT_CATALOG_ICON;
 
         return (
@@ -54,11 +54,7 @@ export function CatalogHeroCarousel({ missions, allUserMissions, onSelect }: Cat
               <View style={[styles.iconBadge, { backgroundColor: theme.background }]}>
                 <Icon size={26} color={theme.secondary} />
               </View>
-              <MissionStatusBadge
-                status={status}
-                dayNumber={latest?.state.day_number}
-                durationDays={mission.duration_days}
-              />
+              <MissionStatusBadge achievement={achievement} />
             </View>
 
             <ThemedText type="smallBold" numberOfLines={1}>

@@ -205,13 +205,17 @@ function buildHistoryUserMissionView(
 // h4 e h5 existem, além de exercitar o histórico em si, pra dar pra ver os
 // 3 níveis de medalha (src/lib/medals.ts) de cara no cenário padrão, sem
 // precisar trocar de cenário manualmente: h1 (2 faltas) já cobre o nível 3,
-// h4 (0 faltas) cobre o nível 1, h5 (1 falta) cobre o nível 2.
+// h4 (0 faltas) cobre o nível 1, h5 (1 falta) cobre o nível 2. h6 repete a
+// mesma missão de h4 no mesmo nível, pra dar pra ver o contador "×N" do
+// selo de conquista do catálogo (CONTEXT.md Log de Decisões #16) mostrando
+// mais que 1 de cara.
 const sharedHistory: UserMissionView[] = [
   buildHistoryUserMissionView('h1', 'mission-fitness-10k-steps', 60, 30, 2, 'completed'),
   buildHistoryUserMissionView('h2', 'mission-study-read20', 90, 10, 4, 'failed'),
   buildHistoryUserMissionView('h3', 'mission-finance-no-impulse', 45, 5, 0, 'abandoned'),
   buildHistoryUserMissionView('h4', 'mission-study-1h', 40, 30, 0, 'completed'),
   buildHistoryUserMissionView('h5', 'mission-sleep-no-screens', 35, 30, 1, 'completed'),
+  buildHistoryUserMissionView('h6', 'mission-study-1h', 75, 30, 0, 'completed'),
 ];
 
 // -- cenários ---------------------------------------------------------------

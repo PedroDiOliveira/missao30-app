@@ -35,31 +35,50 @@ export interface MissionMedal {
   missionTitle: string;
   missionIconName: string;
   tier: MedalTier;
+  /** Quantas vezes essa missão bateu especificamente esse nível (o melhor
+   * já alcançado) — não o total de conclusões em qualquer nível. */
+  count: number;
 }
 
 /** Uma entrada por missão do catálogo — mantém só o melhor (menor) nível já
  * alcançado, mesmo que o usuário tenha repetido a missão várias vezes
- * ("Tentar Novamente", já suportado pelo catálogo). */
+ * ("Tentar Novamente", já suportado pelo catálogo), mais quantas vezes
+ * bateu esse nível específico. */
 export function computeBestMedals(missionHistory: UserMissionView[]): MissionMedal[] {
-  const best = new Map<string, MissionMedal>();
+  const bestTier = new Map<string, MedalTier>();
+  const meta = new Map<string, { title: string; iconName: string }>();
 
   for (const view of missionHistory) {
     if (view.state.status !== 'completed') continue;
     const tier = getMedalTier(view.state.fails_count, view.userMission.allowed_fails);
     if (tier === null) continue;
 
-    const existing = best.get(view.mission.id);
-    if (!existing || tier < existing.tier) {
-      best.set(view.mission.id, {
-        missionId: view.mission.id,
-        missionTitle: view.mission.title,
-        missionIconName: view.mission.icon_name,
-        tier,
-      });
+    meta.set(view.mission.id, { title: view.mission.title, iconName: view.mission.icon_name });
+    const existing = bestTier.get(view.mission.id);
+    if (existing === undefined || tier < existing) bestTier.set(view.mission.id, tier);
+  }
+
+  const counts = new Map<string, number>();
+  for (const view of missionHistory) {
+    if (view.state.status !== 'completed') continue;
+    const tier = getMedalTier(view.state.fails_count, view.userMission.allowed_fails);
+    if (tier !== null && tier === bestTier.get(view.mission.id)) {
+      counts.set(view.mission.id, (counts.get(view.mission.id) ?? 0) + 1);
     }
   }
 
-  return Array.from(best.values()).sort((a, b) => a.tier - b.tier || a.missionTitle.localeCompare(b.missionTitle));
+  return Array.from(bestTier.entries())
+    .map(([missionId, tier]) => {
+      const missionMeta = meta.get(missionId);
+      return {
+        missionId,
+        missionTitle: missionMeta?.title ?? '',
+        missionIconName: missionMeta?.iconName ?? '',
+        tier,
+        count: counts.get(missionId) ?? 0,
+      };
+    })
+    .sort((a, b) => a.tier - b.tier || a.missionTitle.localeCompare(b.missionTitle));
 }
 
 /** Conta quantas medalhas o usuário tem em cada nível — usado pelo card de

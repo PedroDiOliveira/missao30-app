@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { AnimatedModal } from '@/components/ui/animated-modal';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { CATEGORY_LABEL, getCatalogStatus } from '@/lib/catalog';
+import { CATEGORY_LABEL, getCatalogStatus, getMissionAchievement } from '@/lib/catalog';
 import { CATALOG_ICONS, DEFAULT_CATALOG_ICON } from '@/lib/icons';
 import { missionCatalog } from '@/lib/mock-data';
 import type { Mission, UserMissionView } from '@/lib/types';
@@ -56,6 +56,7 @@ export function MissionDetailModal({
   const { status, latest } = mission
     ? getCatalogStatus(mission.id, allUserMissions)
     : { status: 'available' as const, latest: undefined };
+  const achievement = mission ? getMissionAchievement(mission.id, allUserMissions) : { kind: 'never_tried' as const };
   const atCap = activeMissionsCount >= maxActiveMissions;
   const Icon = mission ? (CATALOG_ICONS[mission.icon_name] ?? DEFAULT_CATALOG_ICON) : DEFAULT_CATALOG_ICON;
 
@@ -88,11 +89,7 @@ export function MissionDetailModal({
             <Icon size={28} color={theme.secondary} />
           </View>
 
-          <MissionStatusBadge
-            status={status}
-            dayNumber={latest?.state.day_number}
-            durationDays={mission.duration_days}
-          />
+          <MissionStatusBadge achievement={achievement} />
 
           <ThemedText type="default" style={styles.title}>
             {mission.title}

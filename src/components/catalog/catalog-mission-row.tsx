@@ -4,7 +4,7 @@ import { MissionStatusBadge } from '@/components/catalog/mission-status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { CATEGORY_LABEL, getCatalogStatus } from '@/lib/catalog';
+import { CATEGORY_LABEL, getMissionAchievement } from '@/lib/catalog';
 import { CATALOG_ICONS, DEFAULT_CATALOG_ICON, UiIcons } from '@/lib/icons';
 import type { Mission, UserMissionView } from '@/lib/types';
 
@@ -19,7 +19,7 @@ interface CatalogMissionRowProps {
  * lugar do botão de check-in inline (aqui o toque abre o modal de detalhe). */
 export function CatalogMissionRow({ mission, allUserMissions, onPress }: CatalogMissionRowProps) {
   const theme = useTheme();
-  const { status, latest } = getCatalogStatus(mission.id, allUserMissions);
+  const achievement = getMissionAchievement(mission.id, allUserMissions);
   const Icon = CATALOG_ICONS[mission.icon_name] ?? DEFAULT_CATALOG_ICON;
 
   return (
@@ -37,7 +37,7 @@ export function CatalogMissionRow({ mission, allUserMissions, onPress }: Catalog
         <ThemedText type="small" themeColor="textSecondary">
           {CATEGORY_LABEL[mission.category]}
         </ThemedText>
-        <MissionStatusBadge status={status} dayNumber={latest?.state.day_number} durationDays={mission.duration_days} />
+        <MissionStatusBadge achievement={achievement} />
       </View>
       <UiIcons.chevronRight size={18} color={theme.textSecondary} />
     </Pressable>

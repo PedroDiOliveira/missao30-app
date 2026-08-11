@@ -5,6 +5,7 @@
  * aconteceu com ela, se aconteceu algo.
  */
 
+import { getMedalTier, type MedalTier } from '@/lib/medals';
 import type { MissionCategory, UserMissionView } from '@/lib/types';
 
 export const CATEGORY_LABEL: Record<MissionCategory, string> = {
@@ -34,4 +35,34 @@ export function getCatalogStatus(missionId: string, allUserMissions: UserMission
 
   const latest = [...attempts].sort((a, b) => (a.userMission.start_date < b.userMission.start_date ? 1 : -1))[0];
   return { status: latest.state.status as CatalogStatus, latest };
+}
+
+/** Selo do catálogo em linguagem de conquista, não de status (CONTEXT.md
+ * Log de Decisões #16) — nunca rotula um resultado passado ruim, só
+ * convida (nunca tentada) ou celebra (medalha conquistada). */
+export type MissionAchievement =
+  | { kind: 'never_tried' }
+  | { kind: 'active'; dayNumber: number; durationDays: number }
+  | { kind: 'no_medal' }
+  | { kind: 'medal'; tier: MedalTier; count: number };
+
+export function getMissionAchievement(missionId: string, allUserMissions: UserMissionView[]): MissionAchievement {
+  const attempts = allUserMissions.filter((view) => view.mission.id === missionId);
+  if (attempts.length === 0) return { kind: 'never_tried' };
+
+  const active = attempts.find((view) => view.state.status === 'active');
+  if (active) {
+    return { kind: 'active', dayNumber: active.state.day_number, durationDays: active.userMission.duration_days };
+  }
+
+  const completedTiers = attempts
+    .filter((view) => view.state.status === 'completed')
+    .map((view) => getMedalTier(view.state.fails_count, view.userMission.allowed_fails))
+    .filter((tier): tier is MedalTier => tier !== null);
+
+  if (completedTiers.length === 0) return { kind: 'no_medal' };
+
+  const tier = Math.min(...completedTiers) as MedalTier;
+  const count = completedTiers.filter((t) => t === tier).length;
+  return { kind: 'medal', tier, count };
 }

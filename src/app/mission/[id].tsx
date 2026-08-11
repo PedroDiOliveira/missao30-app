@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProgressGrid } from '@/components/mission/progress-grid';
@@ -8,6 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BackButton } from '@/components/ui/back-button';
 import { CheckRingIcon } from '@/components/ui/check-ring-icon';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { StreakRingIcon } from '@/components/ui/streak-ring-icon';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Radius, Spacing } from '@/constants/theme';
@@ -32,6 +34,7 @@ export default function MissionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const { getMissionById, checkIn, abandonMission } = useMissionsData();
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
   const mission = getMissionById(id);
 
   if (!mission) {
@@ -52,22 +55,9 @@ export default function MissionDetailScreen() {
     checkIn(userMission.id);
   }
 
-  function handleAbandon() {
-    Alert.alert(
-      'Abandonar missão?',
-      'Isso não pode ser desfeito. Você vai poder aceitar uma missão nova imediatamente.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Abandonar',
-          style: 'destructive',
-          onPress: () => {
-            abandonMission(userMission.id);
-            router.push(`/report/${userMission.id}`);
-          },
-        },
-      ],
-    );
+  function confirmAbandon() {
+    abandonMission(userMission.id);
+    router.push(`/report/${userMission.id}`);
   }
 
   return (
@@ -140,13 +130,25 @@ export default function MissionDetailScreen() {
             </ThemedText>
           </Pressable>
 
-          <Pressable accessibilityRole="button" onPress={handleAbandon} style={styles.abandonLink}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setConfirmingAbandon(true)}
+            style={styles.abandonLink}>
             <ThemedText type="small" themeColor="textSecondary">
               Abandonar Missão
             </ThemedText>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
+
+      <ConfirmDialog
+        visible={confirmingAbandon}
+        onClose={() => setConfirmingAbandon(false)}
+        title="Abandonar missão?"
+        message="Isso não pode ser desfeito. Você vai poder aceitar uma missão nova imediatamente."
+        confirmLabel="Abandonar"
+        onConfirm={confirmAbandon}
+      />
     </ThemedView>
   );
 }

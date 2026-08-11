@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -55,6 +54,7 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
   const { currentBestStreak } = computeQuickStats(activeMissions, missionHistory);
   const [modalVisible, setModalVisible] = useState(false);
   const [page, setPage] = useState(0);
+  const [shareInfoVisible, setShareInfoVisible] = useState(false);
 
   const progress = useSharedValue(0);
   const currentYear = new Date().getFullYear();
@@ -73,10 +73,14 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
     progress.value = withTiming(0, { duration: ANIMATION_DURATION * 0.8 }, (finished) => {
       if (finished) runOnJS(setModalVisible)(false);
     });
+    setShareInfoVisible(false);
   }
 
+  // Feedback inline em vez de Alert.alert (que no react-native-web é uma
+  // função vazia — nunca aparece nada no navegador). Empilhar um segundo
+  // Modal por cima deste pra um aviso tão simples seria peso demais.
   function handleShare() {
-    Alert.alert('Em breve', 'Compartilhar como imagem/story é um recurso que ainda vamos construir.');
+    setShareInfoVisible(true);
   }
 
   function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
@@ -181,6 +185,12 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
               ))}
             </View>
 
+            {shareInfoVisible && (
+              <ThemedText type="small" themeColor="textSecondary" style={styles.shareInfo}>
+                Em breve — compartilhar como imagem/story ainda está em construção.
+              </ThemedText>
+            )}
+
             <Pressable
               onPress={handleShare}
               style={[styles.shareButton, { backgroundColor: theme.primary }]}
@@ -278,6 +288,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
+  },
+  shareInfo: {
+    textAlign: 'center',
+    marginHorizontal: Spacing.four,
   },
   shareButton: {
     flexDirection: 'row',
