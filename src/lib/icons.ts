@@ -18,7 +18,7 @@ import {
   MonitorOff,
   PiggyBank,
   Plus,
-  Sparkles,
+  Quote,
   TrendingUp,
   Trophy,
   User,
@@ -47,7 +47,7 @@ export const CATALOG_ICONS: Record<string, LucideIcon> = {
 export const DEFAULT_CATALOG_ICON: LucideIcon = Compass;
 
 export const UiIcons = {
-  tip: Sparkles,
+  quote: Quote,
   profile: User,
   catalog: Compass,
   stats: TrendingUp,

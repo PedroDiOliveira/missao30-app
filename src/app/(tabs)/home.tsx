@@ -2,8 +2,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActiveMissionsCard } from '@/components/dashboard/active-missions-card';
-import { CategoryTipsCard } from '@/components/dashboard/category-tips-card';
 import { QuickStatsCard } from '@/components/dashboard/quick-stats-card';
+import { QuoteOfTheDayCard } from '@/components/dashboard/quote-of-the-day-card';
 import { SettlementNoticeBanner } from '@/components/dashboard/settlement-notice-banner';
 import { ShortcutsCard } from '@/components/dashboard/shortcuts-card';
 import { StreakBadge } from '@/components/dashboard/streak-badge';
@@ -34,6 +34,8 @@ export default function DashboardScreen() {
 
           <SettlementNoticeBanner notices={settlementNotices} onDismiss={dismissNotice} />
 
+          <QuoteOfTheDayCard />
+
           <ActiveMissionsCard
             activeMissions={activeMissions}
             maxActiveMissions={maxActiveMissions}
@@ -42,7 +44,6 @@ export default function DashboardScreen() {
 
           <SuggestedMissionsCard activeMissions={activeMissions} />
           <QuickStatsCard activeMissions={activeMissions} missionHistory={missionHistory} />
-          <CategoryTipsCard activeMissions={activeMissions} />
           <ShortcutsCard />
         </ScrollView>
       </SafeAreaView>
