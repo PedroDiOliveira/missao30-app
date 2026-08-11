@@ -4,6 +4,12 @@ import { useTheme } from '@/hooks/use-theme';
 
 interface AppMarkProps {
   size?: number;
+  /** Renderiza o anel em `textOnDark` em vez de `secondary` — necessário
+   * sempre que a marca aparece sobre uma superfície escura (ex.: o card
+   * hero do perfil, `variant="strong"` do SurfaceCard), já que o fundo
+   * dessas superfícies É `theme.secondary` — sem isso o anel fica
+   * invisível, some contra o próprio fundo. */
+  onDark?: boolean;
 }
 
 /**
@@ -12,8 +18,9 @@ interface AppMarkProps {
  * "você está aqui"). Minimalista de propósito: 2 formas, sem gradiente,
  * legível até em tamanhos pequenos (cabeçalho, favicon).
  */
-export function AppMark({ size = 32 }: AppMarkProps) {
+export function AppMark({ size = 32, onDark = false }: AppMarkProps) {
   const theme = useTheme();
+  const ringColor = onDark ? theme.textOnDark : theme.secondary;
 
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48">
@@ -23,7 +30,7 @@ export function AppMark({ size = 32 }: AppMarkProps) {
           cy={24}
           r={17}
           fill="none"
-          stroke={theme.secondary}
+          stroke={ringColor}
           strokeWidth={4}
           strokeLinecap="round"
           strokeDasharray="80 106.8"
