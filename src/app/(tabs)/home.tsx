@@ -7,7 +7,6 @@ import { QuickStatsCard } from '@/components/dashboard/quick-stats-card';
 import { SettlementNoticeBanner } from '@/components/dashboard/settlement-notice-banner';
 import { ShortcutsCard } from '@/components/dashboard/shortcuts-card';
 import { SuggestedMissionsCard } from '@/components/dashboard/suggested-missions-card';
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AppMark } from '@/components/ui/app-mark';
 import { Spacing, TabBarClearance } from '@/constants/theme';
@@ -28,15 +27,7 @@ export default function DashboardScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <ThemedText type="small" themeColor="textSecondary">
-              Bem-vindo de volta
-            </ThemedText>
-            <View style={styles.brandRow}>
-              <AppMark size={34} />
-              <ThemedText type="title" style={styles.title}>
-                Missão30
-              </ThemedText>
-            </View>
+            <AppMark size={44} />
           </View>
 
           <SettlementNoticeBanner notices={settlementNotices} onDismiss={dismissNotice} />
@@ -73,15 +64,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   header: {
-    gap: Spacing.one,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: Spacing.two,
-  },
-  title: {
-    fontSize: 28,
-    lineHeight: 34,
   },
 });

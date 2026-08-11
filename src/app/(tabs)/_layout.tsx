@@ -23,8 +23,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: Colors.light.primary,
         tabBarInactiveTintColor: Colors.light.textSecondary,
-        tabBarLabelStyle: styles.label,
-        tabBarItemStyle: styles.item,
+        tabBarShowLabel: false,
         tabBarStyle: {
           position: 'absolute',
           left: TabBarSideInset,
@@ -75,12 +74,5 @@ const styles = StyleSheet.create({
   tint: {
     backgroundColor: Colors.light.background,
     opacity: 0.12,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  item: {
-    paddingTop: Spacing.two,
   },
 });
