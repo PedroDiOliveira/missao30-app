@@ -11,6 +11,7 @@ import {
   Book,
   ChevronLeft,
   ChevronRight,
+  CircleX,
   Compass,
   Dumbbell,
   Flame,
@@ -65,4 +66,5 @@ export const UiIcons = {
   close: X,
   lock: Lock,
   percent: Percent,
+  missed: CircleX,
 } satisfies Record<string, LucideIcon>;

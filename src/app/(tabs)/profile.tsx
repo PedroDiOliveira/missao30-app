@@ -16,12 +16,6 @@ import { useMissionsData } from '@/context/missions-context';
 import { mockProfile } from '@/lib/mock-data';
 import { computeQuickStats } from '@/lib/stats';
 
-// Placeholder de e-mail só pra exibição — `Profile` (CONTEXT.md Seção 5) não
-// tem coluna de e-mail de propósito (isso vive em auth.users, não em
-// profiles); sem autenticação real ainda, não há de onde puxar um e-mail
-// de verdade.
-const PLACEHOLDER_EMAIL = 'pedro@exemplo.com';
-
 /**
  * Perfil (CONTEXT.md Seção 8, Tela 6) — cartão-hero de identidade (com o
  * número de missões concluídas em destaque, estilo "perfil pra ter orgulho
@@ -41,9 +35,6 @@ export default function ProfileScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <SurfaceCard variant="strong" style={styles.hero}>
             <AppMark size={40} onDark />
-            <ThemedText type="small" themeColor="textOnDarkSecondary">
-              {PLACEHOLDER_EMAIL}
-            </ThemedText>
             <ThemedText type="title" themeColor="textOnDark" style={styles.heroName}>
               {mockProfile.full_name}
             </ThemedText>
