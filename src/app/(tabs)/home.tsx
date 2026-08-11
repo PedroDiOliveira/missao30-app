@@ -6,6 +6,7 @@ import { CategoryTipsCard } from '@/components/dashboard/category-tips-card';
 import { QuickStatsCard } from '@/components/dashboard/quick-stats-card';
 import { SettlementNoticeBanner } from '@/components/dashboard/settlement-notice-banner';
 import { ShortcutsCard } from '@/components/dashboard/shortcuts-card';
+import { StreakBadge } from '@/components/dashboard/streak-badge';
 import { SuggestedMissionsCard } from '@/components/dashboard/suggested-missions-card';
 import { ThemedView } from '@/components/themed-view';
 import { AppMark } from '@/components/ui/app-mark';
@@ -28,6 +29,7 @@ export default function DashboardScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <AppMark size={44} />
+            <StreakBadge activeMissions={activeMissions} missionHistory={missionHistory} />
           </View>
 
           <SettlementNoticeBanner notices={settlementNotices} onDismiss={dismissNotice} />
@@ -64,7 +66,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   header: {
-    alignItems: 'flex-start',
-    gap: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 });
