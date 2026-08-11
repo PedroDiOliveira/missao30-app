@@ -23,14 +23,9 @@ export function ActiveMissionsCard({ activeMissions, maxActiveMissions, onCheckI
 
   return (
     <SurfaceCard variant="strong" style={styles.card}>
-      <View style={styles.heading}>
-        <ThemedText type="default" themeColor="textOnDark">
-          Bem-vindo de volta
-        </ThemedText>
-        <ThemedText type="smallBold" themeColor="textOnDarkSecondary" style={styles.eyebrow}>
-          SUAS MISSÕES ATIVAS
-        </ThemedText>
-      </View>
+      <ThemedText type="smallBold" themeColor="textOnDarkSecondary" style={styles.eyebrow}>
+        SUAS MISSÕES ATIVAS
+      </ThemedText>
 
       {activeMissions.length === 0 ? (
         <View style={styles.emptyState}>
@@ -73,9 +68,6 @@ export function ActiveMissionsCard({ activeMissions, maxActiveMissions, onCheckI
 const styles = StyleSheet.create({
   card: {
     gap: Spacing.three,
-  },
-  heading: {
-    gap: Spacing.half,
   },
   eyebrow: {
     letterSpacing: 0.5,

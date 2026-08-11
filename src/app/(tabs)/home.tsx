@@ -8,10 +8,12 @@ import { SettlementNoticeBanner } from '@/components/dashboard/settlement-notice
 import { ShortcutsCard } from '@/components/dashboard/shortcuts-card';
 import { StreakBadge } from '@/components/dashboard/streak-badge';
 import { SuggestedMissionsCard } from '@/components/dashboard/suggested-missions-card';
+import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AppMark } from '@/components/ui/app-mark';
 import { Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
+import { mockProfile } from '@/lib/mock-data';
 
 /**
  * Dashboard — nova tela de entrada (CONTEXT.md Seção 3/§7). Nunca redireciona
@@ -28,7 +30,17 @@ export default function DashboardScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <AppMark size={44} />
+            <View style={styles.greetingBlock}>
+              <AppMark size={36} />
+              <View style={styles.textBlock}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Bem-vindo de volta
+                </ThemedText>
+                <ThemedText type="title" style={styles.userName}>
+                  {mockProfile.full_name}
+                </ThemedText>
+              </View>
+            </View>
             <StreakBadge activeMissions={activeMissions} missionHistory={missionHistory} />
           </View>
 
@@ -68,7 +80,17 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+  },
+  greetingBlock: {
+    gap: Spacing.two,
+  },
+  textBlock: {
+    gap: Spacing.half,
+  },
+  userName: {
+    fontSize: 26,
+    lineHeight: 30,
   },
 });

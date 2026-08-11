@@ -10,11 +10,22 @@
 
 import { addDays, daysAgo } from '@/lib/date';
 import { computeMissionState } from '@/lib/mission-state';
-import type { Mission, UserMission, UserMissionView } from '@/lib/types';
+import type { Mission, Profile, UserMission, UserMissionView } from '@/lib/types';
 
 export type MockScenario = 'empty' | 'single_active' | 'multiple_active' | 'at_cap';
 
 export const ACTIVE_SCENARIO: MockScenario = 'multiple_active';
+
+// Perfil mockado — troca pra vir de auth.users/profiles quando o Supabase
+// entrar de verdade. Só o nome é usado hoje (saudação no dashboard).
+export const mockProfile: Profile = {
+  id: 'mock-user',
+  full_name: 'Pedro',
+  avatar_url: null,
+  reminder_time: '20:00',
+  reminder_enabled: true,
+  created_at: daysAgo(120),
+};
 
 // -- catálogo completo (CONTEXT.md Seção 12) ------------------------------
 export const missionCatalog: Mission[] = [
