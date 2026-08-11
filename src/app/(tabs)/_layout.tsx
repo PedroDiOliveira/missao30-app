@@ -3,19 +3,18 @@ import { Tabs } from 'expo-router';
 // Caminho interno do expo-router (não é uma subpath pública "oficial", mas
 // é onde o pacote realmente define esse tipo hoje — só o tipo, sem runtime).
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs';
-import type { LucideIcon } from 'lucide-react-native';
-import { useEffect } from 'react';
+import { useEffect, type ComponentType } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { NavHomeIcon, NavMissionsIcon, NavProfileIcon, type NavIconProps } from '@/components/ui/nav-icons';
 import { Colors, Radius, Spacing, TabBarHeight, TabBarSideInset } from '@/constants/theme';
-import { UiIcons } from '@/lib/icons';
 
-const TAB_ICONS: Record<string, LucideIcon> = {
-  home: UiIcons.home,
-  missions: UiIcons.catalog,
-  profile: UiIcons.profile,
+const TAB_ICONS: Record<string, ComponentType<NavIconProps>> = {
+  home: NavHomeIcon,
+  missions: NavMissionsIcon,
+  profile: NavProfileIcon,
 };
 
 const TAB_LABELS: Record<string, string> = {
@@ -39,7 +38,7 @@ interface TabBarItemProps {
  * próprios valores animados (o ícone cresce e a pílula de fundo entra/sai
  * suavemente quando a aba fica selecionada). */
 function TabBarItem({ routeName, isFocused, onPress }: TabBarItemProps) {
-  const Icon = TAB_ICONS[routeName] ?? UiIcons.home;
+  const Icon = TAB_ICONS[routeName] ?? NavHomeIcon;
   const color = isFocused ? Colors.light.primary : Colors.light.textSecondary;
 
   const scale = useSharedValue(isFocused ? ACTIVE_SCALE : 1);
