@@ -64,10 +64,10 @@ function StreakRingIcon({ color, size = 18 }: { color: string; size?: number }) 
  * quando é 0, pra não virar decoração vazia pra quem ainda não começou.
  *
  * Tocável: abre um modal com um carrossel de "moldes" pra compartilhar —
- * desliza pro lado pra ver os outros. O primeiro é o gráfico de atividade
- * do ano-calendário inteiro (janeiro a dezembro, estilo GitHub, sem
- * scroll — a largura do card se ajusta à tela pra caber tudo de uma vez);
- * o segundo é o número da sequência em destaque. O botão de compartilhar
+ * desliza pro lado pra ver os outros. O primeiro é o número da sequência
+ * em destaque; o segundo é o gráfico de atividade do ano-calendário
+ * inteiro (janeiro a dezembro, estilo GitHub, sem scroll — a largura do
+ * card se ajusta à tela pra caber tudo de uma vez). O botão de compartilhar
  * fica fixo embaixo, fora do carrossel — a geração da imagem/story em si
  * ainda não existe, só o botão já está no lugar certo. */
 export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps) {
@@ -101,7 +101,7 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
     Alert.alert('Em breve', 'Compartilhar como imagem/story é um recurso que ainda vamos construir.');
   }
 
-  function handleScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
+  function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const next = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
     setPage(Math.max(0, Math.min(next, PAGE_COUNT - 1)));
   }
@@ -158,18 +158,10 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={handleScrollEnd}
+              onScroll={handleScroll}
+              onMomentumScrollEnd={handleScroll}
+              scrollEventThrottle={16}
               style={[styles.pager, { width: cardWidth }]}>
-              <View style={[styles.page, { width: cardWidth, paddingHorizontal: GRAPH_PAGE_PADDING }]}>
-                <View style={styles.pageHeader}>
-                  <UiIcons.stats size={18} color={theme.primary} />
-                  <ThemedText type="smallBold" themeColor="secondary" style={styles.eyebrow}>
-                    SUA ATIVIDADE EM {currentYear}
-                  </ThemedText>
-                </View>
-                <YearActivityGraph weeks={weeks} width={graphWidth} />
-              </View>
-
               <View
                 style={[
                   styles.page,
@@ -189,6 +181,16 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
                   Esse número representa quantos dias seguidos você fez check-in nas suas missões, sem quebrar a
                   sequência. Continue assim!
                 </ThemedText>
+              </View>
+
+              <View style={[styles.page, { width: cardWidth, paddingHorizontal: GRAPH_PAGE_PADDING }]}>
+                <View style={styles.pageHeader}>
+                  <UiIcons.stats size={18} color={theme.primary} />
+                  <ThemedText type="smallBold" themeColor="secondary" style={styles.eyebrow}>
+                    SUA ATIVIDADE EM {currentYear}
+                  </ThemedText>
+                </View>
+                <YearActivityGraph weeks={weeks} width={graphWidth} />
               </View>
             </ScrollView>
 
