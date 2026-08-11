@@ -1,12 +1,23 @@
 import { useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, G } from 'react-native-svg';
 
+import { YearActivityGraph } from '@/components/dashboard/year-activity-graph';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { buildCheckInCountsByDate, buildYearGrid } from '@/lib/activity';
 import { UiIcons } from '@/lib/icons';
 import { computeQuickStats } from '@/lib/stats';
 import type { UserMissionView } from '@/lib/types';
@@ -17,6 +28,10 @@ interface StreakBadgeProps {
 }
 
 const ANIMATION_DURATION = 220;
+const CARD_WIDTH = 340;
+const CARD_PADDING = Spacing.five;
+const PAGE_WIDTH = CARD_WIDTH - CARD_PADDING * 2;
+const PAGE_COUNT = 2;
 
 /** Mini anel de progresso — mesmo motivo do AppMark e do ícone de Missões,
  * de propósito: reforça a marca em vez de recorrer ao ícone de fogo que
@@ -44,19 +59,26 @@ function StreakRingIcon({ color, size = 18 }: { color: string; size?: number }) 
  * "streak perdoador" já estabelecida (CONTEXT.md Decisão #2, calculada em
  * src/lib/stats.ts): a melhor sequência entre as missões ativas. Some
  * quando é 0, pra não virar decoração vazia pra quem ainda não começou.
- * Tocável: abre um card com o número em destaque + um botão de
- * compartilhar (a geração de imagem/story em si ainda não existe — o
- * botão já fica no lugar, só avisa que é uma feature futura). */
+ *
+ * Tocável: abre um modal com um carrossel de "moldes" pra compartilhar —
+ * desliza pro lado pra ver os outros. O primeiro é o gráfico de atividade
+ * anual (estilo GitHub); o segundo é o número da sequência em destaque.
+ * O botão de compartilhar fica fixo embaixo, fora do carrossel — a
+ * geração da imagem/story em si ainda não existe, só o botão já está no
+ * lugar certo. */
 export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { currentBestStreak } = computeQuickStats(activeMissions, missionHistory);
   const [modalVisible, setModalVisible] = useState(false);
+  const [page, setPage] = useState(0);
 
   const progress = useSharedValue(0);
+  const weeks = buildYearGrid(buildCheckInCountsByDate(activeMissions, missionHistory));
 
   function openModal() {
     setModalVisible(true);
+    setPage(0);
     progress.value = withTiming(1, { duration: ANIMATION_DURATION });
   }
 
@@ -67,7 +89,12 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
   }
 
   function handleShare() {
-    Alert.alert('Em breve', 'Compartilhar sua sequência como imagem é um recurso que ainda vamos construir.');
+    Alert.alert('Em breve', 'Compartilhar como imagem/story é um recurso que ainda vamos construir.');
+  }
+
+  function handleScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    const next = Math.round(event.nativeEvent.contentOffset.x / PAGE_WIDTH);
+    setPage(Math.max(0, Math.min(next, PAGE_COUNT - 1)));
   }
 
   const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
@@ -118,21 +145,49 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
               <UiIcons.close size={18} color={theme.textSecondary} />
             </Pressable>
 
-            <View style={styles.iconBadge}>
-              <StreakRingIcon color={theme.primary} size={32} />
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={handleScrollEnd}
+              style={styles.pager}>
+              <View style={styles.page}>
+                <View style={styles.pageHeader}>
+                  <UiIcons.stats size={18} color={theme.primary} />
+                  <ThemedText type="smallBold" themeColor="secondary" style={styles.eyebrow}>
+                    SUA ATIVIDADE
+                  </ThemedText>
+                </View>
+                <View style={styles.graphWrap}>
+                  <YearActivityGraph weeks={weeks} />
+                </View>
+              </View>
+
+              <View style={[styles.page, styles.streakPage]}>
+                <View style={styles.iconBadge}>
+                  <StreakRingIcon color={theme.primary} size={32} />
+                </View>
+                <ThemedText type="title" style={styles.bigNumber}>
+                  {currentBestStreak}
+                </ThemedText>
+                <ThemedText type="smallBold" themeColor="secondary" style={styles.label}>
+                  {currentBestStreak === 1 ? 'DIA SEGUIDO DE CHECK-IN' : 'DIAS SEGUIDOS DE CHECK-IN'}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.description}>
+                  Esse número representa quantos dias seguidos você fez check-in nas suas missões, sem quebrar a
+                  sequência. Continue assim!
+                </ThemedText>
+              </View>
+            </ScrollView>
+
+            <View style={styles.dots}>
+              {Array.from({ length: PAGE_COUNT }, (_, i) => (
+                <View
+                  key={i}
+                  style={[styles.dot, { backgroundColor: i === page ? theme.primary : theme.border }]}
+                />
+              ))}
             </View>
-
-            <ThemedText type="title" style={styles.bigNumber}>
-              {currentBestStreak}
-            </ThemedText>
-            <ThemedText type="smallBold" themeColor="secondary" style={styles.label}>
-              {currentBestStreak === 1 ? 'DIA SEGUIDO DE CHECK-IN' : 'DIAS SEGUIDOS DE CHECK-IN'}
-            </ThemedText>
-
-            <ThemedText type="small" themeColor="textSecondary" style={styles.description}>
-              Esse número representa quantos dias seguidos você fez check-in nas suas missões, sem quebrar a
-              sequência. Continue assim!
-            </ThemedText>
 
             <Pressable
               onPress={handleShare}
@@ -176,18 +231,44 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    maxWidth: 340,
+    maxWidth: CARD_WIDTH,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    padding: Spacing.five,
+    paddingVertical: CARD_PADDING,
     alignItems: 'center',
-    gap: Spacing.one,
+    gap: Spacing.three,
   },
   closeButton: {
     position: 'absolute',
     top: Spacing.three,
     right: Spacing.three,
     padding: Spacing.one,
+    zIndex: 1,
+  },
+  pager: {
+    width: PAGE_WIDTH,
+    flexGrow: 0,
+  },
+  page: {
+    width: PAGE_WIDTH,
+    paddingHorizontal: CARD_PADDING,
+    alignItems: 'center',
+  },
+  pageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    alignSelf: 'flex-start',
+    marginBottom: Spacing.three,
+  },
+  eyebrow: {
+    letterSpacing: 0.5,
+  },
+  graphWrap: {
+    alignSelf: 'stretch',
+  },
+  streakPage: {
+    gap: Spacing.one,
   },
   iconBadge: {
     marginBottom: Spacing.two,
@@ -203,8 +284,16 @@ const styles = StyleSheet.create({
   description: {
     textAlign: 'center',
     marginTop: Spacing.two,
-    marginBottom: Spacing.four,
     lineHeight: 20,
+  },
+  dots: {
+    flexDirection: 'row',
+    gap: Spacing.one,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   shareButton: {
     flexDirection: 'row',
@@ -215,5 +304,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     borderRadius: Radius.md,
     alignSelf: 'stretch',
+    marginHorizontal: CARD_PADDING,
   },
 });
