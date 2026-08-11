@@ -1,23 +1,26 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { MedalRingIcon } from '@/components/ui/medal-ring-icon';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { computeBestMedals, MEDAL_TIER_LABEL, type MedalTier } from '@/lib/medals';
+import { computeBestMedals, countMedalsByTier, MEDAL_TIER_LABEL, type MedalTier } from '@/lib/medals';
 import type { UserMissionView } from '@/lib/types';
 
 interface MedalsCardProps {
   missionHistory: UserMissionView[];
 }
 
-/** Vitrine de medalhas — uma por missão do catálogo, a melhor já
- * conquistada (CONTEXT.md Log de Decisões #15). Fica visível mesmo vazia,
- * com uma chamada pra ação, em vez de sumir da tela. */
+const TIERS: MedalTier[] = [1, 2, 3];
+
+/** Vitrine de medalhas — mostra só a CONTAGEM por nível (CONTEXT.md Log de
+ * Decisões #15), não uma medalha por missão. Os contadores em si já
+ * comunicam "ainda não tem nenhuma" quando zerados, então não precisa de um
+ * estado vazio à parte — a seção nunca some. */
 export function MedalsCard({ missionHistory }: MedalsCardProps) {
   const theme = useTheme();
-  const medals = computeBestMedals(missionHistory);
+  const counts = countMedalsByTier(computeBestMedals(missionHistory));
 
   const tierColor: Record<MedalTier, string> = {
     1: theme.secondary,
@@ -31,25 +34,19 @@ export function MedalsCard({ missionHistory }: MedalsCardProps) {
         SUAS MEDALHAS
       </ThemedText>
 
-      {medals.length === 0 ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          Complete uma missão sem estourar o limite de faltas pra ganhar sua primeira medalha.
-        </ThemedText>
-      ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-          {medals.map((medal) => (
-            <View key={medal.missionId} style={styles.tile}>
-              <MedalRingIcon tier={medal.tier} color={tierColor[medal.tier]} size={36} />
-              <ThemedText type="small" numberOfLines={1} style={styles.tileTitle}>
-                {medal.missionTitle}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                {MEDAL_TIER_LABEL[medal.tier]}
-              </ThemedText>
-            </View>
-          ))}
-        </ScrollView>
-      )}
+      <View style={styles.row}>
+        {TIERS.map((tier) => (
+          <View key={tier} style={styles.stat}>
+            <MedalRingIcon tier={tier} color={tierColor[tier]} size={32} />
+            <ThemedText type="default" style={styles.value}>
+              {counts[tier]}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {MEDAL_TIER_LABEL[tier]}
+            </ThemedText>
+          </View>
+        ))}
+      </View>
     </SurfaceCard>
   );
 }
@@ -62,14 +59,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   row: {
-    gap: Spacing.four,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  tile: {
-    width: 88,
-    alignItems: 'center',
-    gap: Spacing.one,
+  stat: {
+    flex: 1,
+    alignItems: 'flex-start',
+    gap: Spacing.half,
   },
-  tileTitle: {
-    textAlign: 'center',
+  value: {
+    fontSize: 22,
+    fontWeight: '700',
+    lineHeight: 26,
   },
 });

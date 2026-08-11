@@ -10,14 +10,15 @@ import type { UserMissionView } from '@/lib/types';
 
 export type MedalTier = 1 | 2 | 3;
 
-// Nomenclatura temática ("Anel ___") em vez de Ouro/Prata/Bronze — mesma
-// lógica de personalidade já usada em AppMark/StreakRingIcon. "Anel
-// Resiliente" é proposital: reforça a filosofia de tolerância a falhas
+// Nomenclatura temática, provisória ("pensamos melhor depois" — ver
+// CONTEXT.md Log de Decisões #15): a versão anterior ("Anel ___") foi
+// trocada por soar com conotação sexual em português. "Resiliente" no
+// nível 3 continua proposital: reforça a filosofia de tolerância a falhas
 // (CONTEXT.md Seção 1) em vez de fazer o nível "mais fraco" soar como fracasso.
 export const MEDAL_TIER_LABEL: Record<MedalTier, string> = {
-  1: 'Anel Completo',
-  2: 'Anel Firme',
-  3: 'Anel Resiliente',
+  1: 'Impecável',
+  2: 'Constante',
+  3: 'Resiliente',
 };
 
 /** Fórmula genérica em cima de `allowedFails` (não hardcoded em 3), pra não
@@ -59,4 +60,14 @@ export function computeBestMedals(missionHistory: UserMissionView[]): MissionMed
   }
 
   return Array.from(best.values()).sort((a, b) => a.tier - b.tier || a.missionTitle.localeCompare(b.missionTitle));
+}
+
+/** Conta quantas medalhas o usuário tem em cada nível — usado pelo card de
+ * perfil, que mostra só o total por nível, sem apontar de qual missão veio
+ * cada uma. Recebe o resultado de `computeBestMedals()` (não recalcula do
+ * histórico), pra manter uma fonte única da regra "1 medalha por missão". */
+export function countMedalsByTier(medals: MissionMedal[]): Record<MedalTier, number> {
+  const counts: Record<MedalTier, number> = { 1: 0, 2: 0, 3: 0 };
+  for (const medal of medals) counts[medal.tier] += 1;
+  return counts;
 }
