@@ -15,6 +15,7 @@ import { useMissionsData } from '@/context/missions-context';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORY_LABEL } from '@/lib/catalog';
 import { todayLocal } from '@/lib/date';
+import { UiIcons } from '@/lib/icons';
 
 /**
  * Detalhe de uma missão — corpo quase idêntico ao antigo /home de missão
@@ -86,8 +87,15 @@ export default function MissionDetailScreen() {
             onPress={handleGoToMenu}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             accessibilityRole="button"
-            accessibilityLabel="Voltar ao início">
+            accessibilityLabel="Voltar ao início"
+            style={({ pressed }) => [styles.backRow, pressed && styles.backRowPressed]}>
             <AppMark size={32} />
+            <View style={styles.backLabel}>
+              <UiIcons.chevronLeft size={16} color={theme.textSecondary} />
+              <ThemedText type="small" themeColor="textSecondary">
+                Voltar
+              </ThemedText>
+            </View>
           </Pressable>
 
           <View style={styles.header}>
@@ -178,6 +186,20 @@ const styles = StyleSheet.create({
     maxWidth: 480,
     width: '100%',
     alignSelf: 'center',
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: Spacing.two,
+  },
+  backRowPressed: {
+    opacity: 0.7,
+  },
+  backLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.half,
   },
   header: {
     gap: Spacing.one,

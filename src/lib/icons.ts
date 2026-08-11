@@ -9,6 +9,7 @@
 import {
   BookOpen,
   Book,
+  ChevronLeft,
   ChevronRight,
   Compass,
   Dumbbell,
@@ -17,6 +18,7 @@ import {
   Lock,
   Moon,
   MonitorOff,
+  Percent,
   PiggyBank,
   Plus,
   Quote,
@@ -56,9 +58,11 @@ export const UiIcons = {
   stats: TrendingUp,
   streak: Flame,
   add: Plus,
+  chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   trophy: Trophy,
   share: Share2,
   close: X,
   lock: Lock,
+  percent: Percent,
 } satisfies Record<string, LucideIcon>;
