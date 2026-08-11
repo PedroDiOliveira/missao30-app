@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { CheckRingIcon } from '@/components/ui/check-ring-icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { todayLocal } from '@/lib/date';
@@ -60,10 +61,13 @@ export function ActiveMissionRow({ view, onCheckIn }: ActiveMissionRowProps) {
           { backgroundColor: alreadyCheckedInToday ? theme.background : theme.primary },
           pressed && !alreadyCheckedInToday && styles.pressed,
         ]}
-        accessibilityRole="button">
-        <ThemedText type="small" themeColor={alreadyCheckedInToday ? 'secondary' : 'textOnDark'}>
-          {alreadyCheckedInToday ? '✓ Feito' : 'Check-in'}
-        </ThemedText>
+        accessibilityRole="button"
+        accessibilityLabel={alreadyCheckedInToday ? 'Check-in já feito hoje' : 'Fazer check-in'}>
+        <CheckRingIcon
+          done={alreadyCheckedInToday}
+          color={alreadyCheckedInToday ? theme.secondary : theme.textOnDark}
+          size={20}
+        />
       </Pressable>
     </View>
   );
@@ -103,11 +107,11 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   checkInButton: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    borderRadius: Radius.sm,
-    minWidth: 84,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   pressed: {
     opacity: 0.85,

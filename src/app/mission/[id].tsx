@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProgressGrid } from '@/components/mission/progress-grid';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { CheckRingIcon } from '@/components/ui/check-ring-icon';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
 import { todayLocal } from '@/lib/date';
@@ -115,13 +116,21 @@ export default function MissionDetailScreen() {
             accessibilityRole="button"
             onPress={handleCheckIn}
             disabled={alreadyCheckedInToday}
+            accessibilityLabel={alreadyCheckedInToday ? 'Check-in já feito hoje' : 'Fazer check-in do dia'}
             style={({ pressed }) => [
               styles.checkInButton,
               alreadyCheckedInToday && styles.checkInButtonDone,
               pressed && !alreadyCheckedInToday && styles.checkInButtonPressed,
             ]}>
-            <ThemedText type="smallBold" themeColor="textOnDark">
-              {alreadyCheckedInToday ? 'Check-in Feito Hoje! 🔥' : 'Fazer Check-In do Dia'}
+            <CheckRingIcon
+              done={alreadyCheckedInToday}
+              color={alreadyCheckedInToday ? Colors.light.secondary : Colors.light.textOnDark}
+              size={22}
+            />
+            <ThemedText
+              type="smallBold"
+              themeColor={alreadyCheckedInToday ? 'secondary' : 'textOnDark'}>
+              Check-in do Dia
             </ThemedText>
           </Pressable>
 
@@ -178,11 +187,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkInButton: {
+    flexDirection: 'row',
     backgroundColor: Colors.light.primary,
     borderRadius: Radius.lg,
-    paddingVertical: Spacing.four,
+    height: 64,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.two,
   },
   checkInButtonPressed: {
     opacity: 0.85,
