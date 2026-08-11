@@ -57,12 +57,17 @@ export function YearActivityGraph({ weeks, width }: YearActivityGraphProps) {
 
       <View style={[styles.monthRow, { width: gridWidth }]}>
         {weeks.map((week, weekIndex) => {
-          if (weekIndex === 0) return null;
           const firstRealDay = week.find((d) => d.inYear);
           if (!firstRealDay) return null;
-          const prevWeek = weeks[weekIndex - 1];
-          const prevFirstRealDay = prevWeek.find((d) => d.inYear) ?? prevWeek[0];
-          if (monthOf(firstRealDay.date) === monthOf(prevFirstRealDay.date)) return null;
+
+          // Semana 0 é sempre a primeira semana de janeiro — não tem
+          // semana anterior pra comparar, então o rótulo sempre aparece
+          // (diferente das demais, que só aparecem quando o mês muda).
+          if (weekIndex > 0) {
+            const prevWeek = weeks[weekIndex - 1];
+            const prevFirstRealDay = prevWeek.find((d) => d.inYear) ?? prevWeek[0];
+            if (monthOf(firstRealDay.date) === monthOf(prevFirstRealDay.date)) return null;
+          }
 
           return (
             <ThemedText
