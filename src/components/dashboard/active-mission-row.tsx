@@ -5,16 +5,10 @@ import { ThemedText } from '@/components/themed-text';
 import { CheckRingIcon } from '@/components/ui/check-ring-icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { CATEGORY_LABEL } from '@/lib/catalog';
 import { todayLocal } from '@/lib/date';
 import { CATALOG_ICONS, DEFAULT_CATALOG_ICON } from '@/lib/icons';
 import type { UserMissionView } from '@/lib/types';
-
-const CATEGORY_LABEL: Record<string, string> = {
-  study: 'Estudos',
-  fitness: 'Treino',
-  sleep: 'Sono',
-  finance: 'Finanças',
-};
 
 interface ActiveMissionRowProps {
   view: UserMissionView;

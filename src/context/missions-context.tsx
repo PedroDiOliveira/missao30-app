@@ -16,10 +16,11 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { MAX_ACTIVE_MISSIONS } from '@/constants/limits';
 import { todayLocal } from '@/lib/date';
 import { computeMissionState } from '@/lib/mission-state';
-import { initialUserMissions } from '@/lib/mock-data';
-import type { SettlementNotice, UserMissionStatus, UserMissionView } from '@/lib/types';
+import { missionCatalog, initialUserMissions } from '@/lib/mock-data';
+import type { SettlementNotice, UserMission, UserMissionStatus, UserMissionView } from '@/lib/types';
 
 interface MissionsContextValue {
+  allUserMissions: UserMissionView[];
   activeMissions: UserMissionView[];
   missionHistory: UserMissionView[];
   settlementNotices: SettlementNotice[];
@@ -27,6 +28,7 @@ interface MissionsContextValue {
   getMissionById: (id: string) => UserMissionView | undefined;
   checkIn: (userMissionId: string) => Promise<void>;
   abandonMission: (userMissionId: string) => Promise<void>;
+  acceptMission: (missionId: string) => Promise<string>;
   dismissNotice: (userMissionId: string) => void;
 }
 
@@ -121,8 +123,48 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
     setSettlementNotices((prev) => prev.filter((n) => n.userMissionId !== userMissionId));
   }, []);
 
+  /** Espelha accept_mission() (CONTEXT.md Seção 6): checa a contagem de
+   * ativas contra o limite antes de inserir. Mesma não-atomicidade já
+   * documentada na Decisão #10 — a contagem lida aqui vem do closure
+   * (activeMissions.length), não de um lock; aceitável pelos mesmos
+   * motivos já registrados (baixa concorrência, 1 usuário/1 aparelho). */
+  const acceptMission = useCallback(
+    async (missionId: string): Promise<string> => {
+      if (activeMissions.length >= MAX_ACTIVE_MISSIONS) {
+        throw new Error(`active mission limit reached (${activeMissions.length}/${MAX_ACTIVE_MISSIONS})`);
+      }
+
+      const mission = missionCatalog.find((m) => m.id === missionId && m.is_published);
+      if (!mission) throw new Error(`mission ${missionId} not found or not published`);
+
+      const today = todayLocal();
+      const newUserMission: UserMission = {
+        id: `user-mission-${missionId}-${Date.now()}`,
+        user_id: 'mock-user',
+        mission_id: mission.id,
+        start_date: today,
+        duration_days: mission.duration_days,
+        allowed_fails: mission.allowed_fails,
+        status: 'active',
+        fails_count: 0,
+        created_at: today,
+      };
+      const newView: UserMissionView = {
+        userMission: newUserMission,
+        mission,
+        state: { status: 'active', fails_count: 0, day_number: 1 },
+        checkInDates: [],
+      };
+
+      setAllUserMissions((prev) => [...prev, newView]);
+      return newUserMission.id;
+    },
+    [activeMissions.length],
+  );
+
   const value = useMemo<MissionsContextValue>(
     () => ({
+      allUserMissions,
       activeMissions,
       missionHistory,
       settlementNotices,
@@ -130,9 +172,20 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
       getMissionById,
       checkIn,
       abandonMission,
+      acceptMission,
       dismissNotice,
     }),
-    [activeMissions, missionHistory, settlementNotices, getMissionById, checkIn, abandonMission, dismissNotice],
+    [
+      allUserMissions,
+      activeMissions,
+      missionHistory,
+      settlementNotices,
+      getMissionById,
+      checkIn,
+      abandonMission,
+      acceptMission,
+      dismissNotice,
+    ],
   );
 
   return <MissionsContext.Provider value={value}>{children}</MissionsContext.Provider>;

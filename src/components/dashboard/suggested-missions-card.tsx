@@ -5,16 +5,10 @@ import { ThemedText } from '@/components/themed-text';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { CATEGORY_LABEL } from '@/lib/catalog';
 import { CATALOG_ICONS, DEFAULT_CATALOG_ICON, UiIcons } from '@/lib/icons';
 import { missionCatalog } from '@/lib/mock-data';
 import type { UserMissionView } from '@/lib/types';
-
-const CATEGORY_LABEL: Record<string, string> = {
-  study: 'Estudos',
-  fitness: 'Treino',
-  sleep: 'Sono',
-  finance: 'Finanças',
-};
 
 interface SuggestedMissionsCardProps {
   activeMissions: UserMissionView[];

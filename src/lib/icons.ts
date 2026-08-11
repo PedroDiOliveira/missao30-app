@@ -14,6 +14,7 @@ import {
   Dumbbell,
   Flame,
   Footprints,
+  Lock,
   Moon,
   MonitorOff,
   PiggyBank,
@@ -59,4 +60,5 @@ export const UiIcons = {
   trophy: Trophy,
   share: Share2,
   close: X,
+  lock: Lock,
 } satisfies Record<string, LucideIcon>;
