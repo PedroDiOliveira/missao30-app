@@ -60,3 +60,7 @@ export function buildCalendarYearGrid(counts: Map<string, number>, year: number)
   }
   return weeks;
 }
+
+export function countActiveDays(weeks: DayCell[][]): number {
+  return weeks.flat().filter((day) => day.inYear && day.count > 0).length;
+}

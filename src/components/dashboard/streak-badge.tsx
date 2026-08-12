@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -11,8 +11,11 @@ import {
 } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { ViewShotRef } from 'react-native-view-shot';
 
 import { YearActivityGraph } from '@/components/dashboard/year-activity-graph';
+import { SharePreviewModal } from '@/components/share/share-preview-modal';
+import { StreakShareCard } from '@/components/share/streak-share-card';
 import { ThemedText } from '@/components/themed-text';
 import { StreakRingIcon } from '@/components/ui/streak-ring-icon';
 import { Radius, Spacing } from '@/constants/theme';
@@ -45,8 +48,11 @@ const PAGE_COUNT = 2;
  * em destaque; o segundo é o gráfico de atividade do ano-calendário
  * inteiro (janeiro a dezembro, estilo GitHub, sem scroll — a largura do
  * card se ajusta à tela pra caber tudo de uma vez). O botão de compartilhar
- * fica fixo embaixo, fora do carrossel — a geração da imagem/story em si
- * ainda não existe, só o botão já está no lugar certo. */
+ * fica fixo embaixo, fora do carrossel — gera um card 9:16 de verdade a
+ * partir da página ativa e abre uma prévia em tela cheia antes de mandar
+ * pra bandeja nativa de compartilhar (`SharePreviewModal`). Por enquanto só
+ * a página de sequência tem card pronto — a do gráfico do ano é o próximo
+ * passo do plano, depois do checkpoint de captura confirmado no aparelho. */
 export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -55,6 +61,8 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
   const [modalVisible, setModalVisible] = useState(false);
   const [page, setPage] = useState(0);
   const [shareInfoVisible, setShareInfoVisible] = useState(false);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const shareCardRef = useRef<ViewShotRef>(null);
 
   const progress = useSharedValue(0);
   const currentYear = new Date().getFullYear();
@@ -79,8 +87,23 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
   // Feedback inline em vez de Alert.alert (que no react-native-web é uma
   // função vazia — nunca aparece nada no navegador). Empilhar um segundo
   // Modal por cima deste pra um aviso tão simples seria peso demais.
+  //
+  // Página do gráfico do ano ainda não tem card de compartilhar — só avisa.
+  // Página da sequência: espera a animação de fechar terminar (callback de
+  // `withTiming`) antes de abrir o modal de prévia, pra nunca ter os dois
+  // `Modal` do RN montados ao mesmo tempo (comportamento inconsistente no
+  // Android com Modal empilhado).
   function handleShare() {
-    setShareInfoVisible(true);
+    if (page !== 0) {
+      setShareInfoVisible(true);
+      return;
+    }
+    progress.value = withTiming(0, { duration: ANIMATION_DURATION * 0.8 }, (finished) => {
+      if (finished) {
+        runOnJS(setModalVisible)(false);
+        runOnJS(setShareModalVisible)(true);
+      }
+    });
   }
 
   function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
@@ -187,7 +210,8 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
 
             {shareInfoVisible && (
               <ThemedText type="small" themeColor="textSecondary" style={styles.shareInfo}>
-                Em breve — compartilhar como imagem/story ainda está em construção.
+                Compartilhar o gráfico do ano ainda está em construção — por enquanto dá pra compartilhar sua
+                sequência (primeira página).
               </ThemedText>
             )}
 
@@ -203,6 +227,16 @@ export function StreakBadge({ activeMissions, missionHistory }: StreakBadgeProps
           </Animated.View>
         </View>
       </Modal>
+
+      <SharePreviewModal
+        visible={shareModalVisible}
+        onClose={() => setShareModalVisible(false)}
+        cardRef={shareCardRef}>
+        {/* width={0} é só pra satisfazer o tipo — SharePreviewModal recalcula e
+            injeta a largura de verdade via cloneElement antes de renderizar,
+            então nenhum valor passado aqui chega a ser pintado na tela. */}
+        <StreakShareCard ref={shareCardRef} width={0} streakDays={currentBestStreak} />
+      </SharePreviewModal>
     </>
   );
 }

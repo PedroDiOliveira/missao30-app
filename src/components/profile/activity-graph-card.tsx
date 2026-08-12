@@ -4,7 +4,7 @@ import { YearActivityGraph } from '@/components/dashboard/year-activity-graph';
 import { ThemedText } from '@/components/themed-text';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Spacing } from '@/constants/theme';
-import { buildCalendarYearGrid, buildCheckInCountsByDate } from '@/lib/activity';
+import { buildCalendarYearGrid, buildCheckInCountsByDate, countActiveDays } from '@/lib/activity';
 import type { UserMissionView } from '@/lib/types';
 
 // Precisa bater com o `maxWidth` do scrollContent de profile.tsx (mesmo
@@ -30,7 +30,7 @@ export function ActivityGraphCard({ activeMissions, missionHistory }: ActivityGr
   const { width: windowWidth } = useWindowDimensions();
   const currentYear = new Date().getFullYear();
   const weeks = buildCalendarYearGrid(buildCheckInCountsByDate(activeMissions, missionHistory), currentYear);
-  const activeDays = weeks.flat().filter((day) => day.inYear && day.count > 0).length;
+  const activeDays = countActiveDays(weeks);
 
   const screenWidth = Math.min(windowWidth, SCREEN_MAX_WIDTH) - SCREEN_PADDING * 2;
   const graphWidth = screenWidth - CARD_PADDING * 2;
