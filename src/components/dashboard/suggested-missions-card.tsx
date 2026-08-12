@@ -7,15 +7,15 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORY_LABEL } from '@/lib/catalog';
 import { CATALOG_ICONS, DEFAULT_CATALOG_ICON, UiIcons } from '@/lib/icons';
-import { missionCatalog } from '@/lib/mock-data';
-import type { UserMissionView } from '@/lib/types';
+import type { Mission, UserMissionView } from '@/lib/types';
 
 interface SuggestedMissionsCardProps {
+  missionCatalog: Mission[];
   activeMissions: UserMissionView[];
 }
 
 /** Sugestões puxadas do catálogo, filtrando o que já está ativo. */
-export function SuggestedMissionsCard({ activeMissions }: SuggestedMissionsCardProps) {
+export function SuggestedMissionsCard({ missionCatalog, activeMissions }: SuggestedMissionsCardProps) {
   const theme = useTheme();
   const activeMissionIds = new Set(activeMissions.map((m) => m.mission.id));
   const suggestions = missionCatalog.filter((m) => !activeMissionIds.has(m.id)).slice(0, 3);

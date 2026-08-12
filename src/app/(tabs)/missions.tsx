@@ -14,8 +14,6 @@ import { ThemedView } from '@/components/themed-view';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { MaxContentWidth, Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
-import { missionCatalog } from '@/lib/mock-data';
-import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 
 /**
  * Catálogo (CONTEXT.md Seção 8, Tela 2) — sensação de "navegação", não uma
@@ -27,11 +25,11 @@ import { useSimulatedLoading } from '@/lib/use-simulated-loading';
  * formulário nem cobrança de verdade.
  */
 export default function MissionsScreen() {
-  const { allUserMissions, activeMissions, maxActiveMissions, acceptMission } = useMissionsData();
+  const { missionCatalog, allUserMissions, activeMissions, maxActiveMissions, acceptMission, loading } =
+    useMissionsData();
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
   const [teaserVisible, setTeaserVisible] = useState(false);
-  const loading = useSimulatedLoading();
 
   if (loading) return <CatalogSkeleton />;
 
@@ -84,6 +82,7 @@ export default function MissionsScreen() {
       <MissionDetailModal
         missionId={selectedMissionId}
         onClose={() => setSelectedMissionId(null)}
+        missionCatalog={missionCatalog}
         allUserMissions={allUserMissions}
         activeMissionsCount={activeMissions.length}
         maxActiveMissions={maxActiveMissions}

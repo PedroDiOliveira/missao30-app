@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { CheckRingIcon } from '@/components/ui/check-ring-icon';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORY_LABEL } from '@/lib/catalog';
@@ -12,7 +14,7 @@ import type { UserMissionView } from '@/lib/types';
 
 interface ActiveMissionRowProps {
   view: UserMissionView;
-  onCheckIn: (userMissionId: string) => void;
+  onCheckIn: (userMissionId: string) => Promise<void>;
 }
 
 /** Uma linha por missão ativa no card hero do dashboard: título + categoria
@@ -20,10 +22,19 @@ interface ActiveMissionRowProps {
  * detalhe) + botão de check-in que age direto aqui, sem navegar. */
 export function ActiveMissionRow({ view, onCheckIn }: ActiveMissionRowProps) {
   const theme = useTheme();
+  const [error, setError] = useState<string | null>(null);
   const { userMission, mission, state, checkInDates } = view;
   const alreadyCheckedInToday = checkInDates.includes(todayLocal());
   const Icon = CATALOG_ICONS[mission.icon_name] ?? DEFAULT_CATALOG_ICON;
   const progress = Math.min(state.day_number / userMission.duration_days, 1);
+
+  async function handleCheckIn() {
+    try {
+      await onCheckIn(userMission.id);
+    } catch {
+      setError('Não foi possível registrar o check-in agora. Tente de novo em instantes.');
+    }
+  }
 
   return (
     <View style={styles.row}>
@@ -48,7 +59,7 @@ export function ActiveMissionRow({ view, onCheckIn }: ActiveMissionRowProps) {
       </Pressable>
 
       <Pressable
-        onPress={() => onCheckIn(userMission.id)}
+        onPress={handleCheckIn}
         disabled={alreadyCheckedInToday}
         style={({ pressed }) => [
           styles.checkInButton,
@@ -63,6 +74,8 @@ export function ActiveMissionRow({ view, onCheckIn }: ActiveMissionRowProps) {
           size={20}
         />
       </Pressable>
+
+      <ConfirmDialog visible={error !== null} onClose={() => setError(null)} title="Ops" message={error ?? ''} />
     </View>
   );
 }

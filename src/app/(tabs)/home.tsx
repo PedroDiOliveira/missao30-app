@@ -15,7 +15,6 @@ import { AppMark } from '@/components/ui/app-mark';
 import { Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
 import { mockProfile } from '@/lib/mock-data';
-import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 
 /**
  * Dashboard — nova tela de entrada (CONTEXT.md Seção 3/§7). Nunca redireciona
@@ -24,9 +23,16 @@ import { useSimulatedLoading } from '@/lib/use-simulated-loading';
  * redirect por-missão que existia aqui antes se mudou pra /mission/[id].
  */
 export default function DashboardScreen() {
-  const { activeMissions, missionHistory, settlementNotices, maxActiveMissions, checkIn, dismissNotice } =
-    useMissionsData();
-  const loading = useSimulatedLoading();
+  const {
+    missionCatalog,
+    activeMissions,
+    missionHistory,
+    settlementNotices,
+    maxActiveMissions,
+    checkIn,
+    dismissNotice,
+    loading,
+  } = useMissionsData();
 
   if (loading) return <DashboardSkeleton />;
 
@@ -59,7 +65,7 @@ export default function DashboardScreen() {
             onCheckIn={checkIn}
           />
 
-          <SuggestedMissionsCard activeMissions={activeMissions} />
+          <SuggestedMissionsCard missionCatalog={missionCatalog} activeMissions={activeMissions} />
           <QuickStatsCard activeMissions={activeMissions} missionHistory={missionHistory} />
           <ShortcutsCard />
         </ScrollView>

@@ -1,30 +1,39 @@
 /**
  * Camada de dados compartilhada entre o dashboard e a tela de detalhe —
- * existe porque as duas podem disparar um check-in, e cópias de useState
- * por tela dessincronizariam ao navegar entre elas. `allUserMissions` é a
+ * fala direto com o Supabase (CONTEXT.md Log de Decisões #19). Existe
+ * porque várias telas podem disparar um check-in, e cópias de useState por
+ * tela dessincronizariam ao navegar entre elas. `allUserMissions` é a
  * única fonte de verdade; `activeMissions`/`missionHistory` são filtros
- * derivados, nunca arrays mantidos à parte (CONTEXT.md Seção 4/§7).
+ * derivados, nunca arrays mantidos à parte.
  *
- * Os mutadores (`checkIn`, `abandonMission`) já retornam Promise mesmo
- * operando sobre o mock — quando virarem chamadas reais às RPCs do
- * Supabase (accept_mission/create_check_in/abandon_mission, CONTEXT.md
- * Seção 6), as telas que os chamam não precisam mudar.
+ * `checkIn`/`abandonMission`/`acceptMission` mantêm exatamente a mesma
+ * assinatura que tinham na fase mock — nenhuma tela que já as chama
+ * precisa mudar como as chama.
  */
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { MAX_ACTIVE_MISSIONS } from '@/constants/limits';
+import { useAuth } from '@/context/auth-context';
 import { todayLocal } from '@/lib/date';
 import { computeMissionState } from '@/lib/mission-state';
-import { missionCatalog, initialUserMissions } from '@/lib/mock-data';
-import type { SettlementNotice, UserMission, UserMissionStatus, UserMissionView } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
+import type {
+  Mission,
+  SettlementNotice,
+  UserMission,
+  UserMissionState,
+  UserMissionView,
+} from '@/lib/types';
 
 interface MissionsContextValue {
+  missionCatalog: Mission[];
   allUserMissions: UserMissionView[];
   activeMissions: UserMissionView[];
   missionHistory: UserMissionView[];
   settlementNotices: SettlementNotice[];
   maxActiveMissions: number;
+  loading: boolean;
   getMissionById: (id: string) => UserMissionView | undefined;
   checkIn: (userMissionId: string) => Promise<void>;
   abandonMission: (userMissionId: string) => Promise<void>;
@@ -34,38 +43,113 @@ interface MissionsContextValue {
 
 const MissionsContext = createContext<MissionsContextValue | null>(null);
 
-function noticeFor(view: UserMissionView, newStatus: Exclude<UserMissionStatus, 'active'>): SettlementNotice {
-  return {
-    userMissionId: view.userMission.id,
-    missionId: view.mission.id,
-    missionTitle: view.mission.title,
-    newStatus,
-  };
-}
-
-/** Recalcula o estado de toda missão que ainda estava 'active', devolvendo
- * as linhas atualizadas + um SettlementNotice pra cada uma que virou
- * terminal nesta passada (CONTEXT.md Seção 7 — settle-on-read por-missão). */
-function settleAll(missions: UserMissionView[], today: string) {
-  const notices: SettlementNotice[] = [];
-  const settled = missions.map((view) => {
-    if (view.state.status !== 'active') return view;
-    const newState = computeMissionState(view.userMission, view.checkInDates, today);
-    if (newState.status !== 'active') notices.push(noticeFor(view, newState.status));
-    return {
-      ...view,
-      userMission: { ...view.userMission, status: newState.status, fails_count: newState.fails_count },
-      state: newState,
-    };
-  });
-  return { missions: settled, notices };
+// Forma bruta que a query embutida (user_missions + missions + check_ins)
+// devolve — sem geração automática de tipos do schema (CONTEXT.md segue o
+// padrão de espelhar o schema manualmente em lib/types.ts), então isso é
+// tipado à mão, igual ao resto do projeto.
+interface UserMissionRow {
+  id: string;
+  user_id: string;
+  mission_id: string;
+  start_date: string;
+  duration_days: number;
+  allowed_fails: number;
+  status: UserMission['status'];
+  fails_count: number;
+  created_at: string;
+  mission: Mission;
+  check_ins: { check_in_date: string }[];
 }
 
 export function MissionsProvider({ children }: { children: ReactNode }) {
-  const [allUserMissions, setAllUserMissions] = useState<UserMissionView[]>(
-    () => settleAll(initialUserMissions, todayLocal()).missions,
-  );
+  const { user } = useAuth();
+  const [missionCatalog, setMissionCatalog] = useState<Mission[]>([]);
+  const [allUserMissions, setAllUserMissions] = useState<UserMissionView[]>([]);
   const [settlementNotices, setSettlementNotices] = useState<SettlementNotice[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    if (!user) {
+      setMissionCatalog([]);
+      setAllUserMissions([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const today = todayLocal();
+
+      const [{ data: catalogRows }, { data: rows }] = await Promise.all([
+        supabase.from('missions').select('*').order('created_at'),
+        supabase
+          .from('user_missions')
+          .select('*, mission:missions(*), check_ins(check_in_date)')
+          .eq('user_id', user.id)
+          .returns<UserMissionRow[]>(),
+      ]);
+
+      setMissionCatalog(catalogRows ?? []);
+
+      const notices: SettlementNotice[] = [];
+      const views: UserMissionView[] = [];
+
+      for (const row of rows ?? []) {
+        const checkInDates = row.check_ins.map((c) => c.check_in_date);
+        let state = computeMissionState(row, checkInDates, today);
+
+        // Só chama a RPC de verdade (persiste no banco + gera o aviso)
+        // quando o cálculo local (mesma fórmula da RPC, já validada)
+        // indica que uma missão que estava ativa virou terminal agora —
+        // evita um round-trip por missão em toda leitura.
+        if (row.status === 'active' && state.status !== 'active') {
+          const { data: settled } = await supabase.rpc('get_user_mission_state', {
+            p_user_mission_id: row.id,
+            p_client_today: today,
+          });
+          const result = (settled as UserMissionState[] | null)?.[0];
+          if (result && result.status !== 'active') {
+            state = result;
+            notices.push({
+              userMissionId: row.id,
+              missionId: row.mission.id,
+              missionTitle: row.mission.title,
+              newStatus: result.status,
+            });
+          }
+        }
+
+        const userMission: UserMission = {
+          id: row.id,
+          user_id: row.user_id,
+          mission_id: row.mission_id,
+          start_date: row.start_date,
+          duration_days: row.duration_days,
+          allowed_fails: row.allowed_fails,
+          status: state.status,
+          fails_count: state.fails_count,
+          created_at: row.created_at,
+        };
+
+        views.push({ userMission, mission: row.mission, state, checkInDates });
+      }
+
+      setAllUserMissions(views);
+      if (notices.length > 0) setSettlementNotices((prev) => [...prev, ...notices]);
+    } catch (err) {
+      console.error('Falha ao carregar dados de missões:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // `loadData` seta estado sincronamente logo no início (loading/guard de
+    // usuário nulo) — despachar via microtask evita que o efeito em si
+    // chame setState de forma direta/síncrona (react-hooks/set-state-in-effect),
+    // sem mudar a reatividade (ainda roda de novo sempre que `user` muda).
+    Promise.resolve().then(() => loadData());
+  }, [loadData]);
 
   const activeMissions = useMemo(
     () => allUserMissions.filter((m) => m.state.status === 'active'),
@@ -81,94 +165,53 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
     [allUserMissions],
   );
 
-  const checkIn = useCallback(async (userMissionId: string) => {
-    const today = todayLocal();
-    let notice: SettlementNotice | null = null;
+  const checkIn = useCallback(
+    async (userMissionId: string) => {
+      const { error } = await supabase.rpc('create_check_in', {
+        p_user_mission_id: userMissionId,
+        p_check_in_date: todayLocal(),
+      });
+      if (error) throw error;
+      await loadData();
+    },
+    [loadData],
+  );
 
-    setAllUserMissions((prev) =>
-      prev.map((view) => {
-        if (view.userMission.id !== userMissionId) return view;
-        if (view.state.status !== 'active' || view.checkInDates.includes(today)) return view;
+  const abandonMission = useCallback(
+    async (userMissionId: string) => {
+      const { error } = await supabase.rpc('abandon_mission', { p_user_mission_id: userMissionId });
+      if (error) throw error;
+      await loadData();
+    },
+    [loadData],
+  );
 
-        const checkInDates = [...view.checkInDates, today];
-        const newState = computeMissionState(view.userMission, checkInDates, today);
-        if (newState.status !== 'active') notice = noticeFor(view, newState.status);
-
-        return {
-          ...view,
-          checkInDates,
-          userMission: { ...view.userMission, status: newState.status, fails_count: newState.fails_count },
-          state: newState,
-        };
-      }),
-    );
-
-    if (notice) setSettlementNotices((prev) => [...prev, notice as SettlementNotice]);
-  }, []);
-
-  const abandonMission = useCallback(async (userMissionId: string) => {
-    setAllUserMissions((prev) =>
-      prev.map((view) => {
-        if (view.userMission.id !== userMissionId || view.state.status !== 'active') return view;
-        return {
-          ...view,
-          userMission: { ...view.userMission, status: 'abandoned' },
-          state: { ...view.state, status: 'abandoned' },
-        };
-      }),
-    );
-  }, []);
+  const acceptMission = useCallback(
+    async (missionId: string): Promise<string> => {
+      const { data, error } = await supabase.rpc('accept_mission', {
+        p_mission_id: missionId,
+        p_client_today: todayLocal(),
+      });
+      if (error) throw error;
+      await loadData();
+      return (data as UserMission).id;
+    },
+    [loadData],
+  );
 
   const dismissNotice = useCallback((userMissionId: string) => {
     setSettlementNotices((prev) => prev.filter((n) => n.userMissionId !== userMissionId));
   }, []);
 
-  /** Espelha accept_mission() (CONTEXT.md Seção 6): checa a contagem de
-   * ativas contra o limite antes de inserir. Mesma não-atomicidade já
-   * documentada na Decisão #10 — a contagem lida aqui vem do closure
-   * (activeMissions.length), não de um lock; aceitável pelos mesmos
-   * motivos já registrados (baixa concorrência, 1 usuário/1 aparelho). */
-  const acceptMission = useCallback(
-    async (missionId: string): Promise<string> => {
-      if (activeMissions.length >= MAX_ACTIVE_MISSIONS) {
-        throw new Error(`active mission limit reached (${activeMissions.length}/${MAX_ACTIVE_MISSIONS})`);
-      }
-
-      const mission = missionCatalog.find((m) => m.id === missionId && m.is_published);
-      if (!mission) throw new Error(`mission ${missionId} not found or not published`);
-
-      const today = todayLocal();
-      const newUserMission: UserMission = {
-        id: `user-mission-${missionId}-${Date.now()}`,
-        user_id: 'mock-user',
-        mission_id: mission.id,
-        start_date: today,
-        duration_days: mission.duration_days,
-        allowed_fails: mission.allowed_fails,
-        status: 'active',
-        fails_count: 0,
-        created_at: today,
-      };
-      const newView: UserMissionView = {
-        userMission: newUserMission,
-        mission,
-        state: { status: 'active', fails_count: 0, day_number: 1 },
-        checkInDates: [],
-      };
-
-      setAllUserMissions((prev) => [...prev, newView]);
-      return newUserMission.id;
-    },
-    [activeMissions.length],
-  );
-
   const value = useMemo<MissionsContextValue>(
     () => ({
+      missionCatalog,
       allUserMissions,
       activeMissions,
       missionHistory,
       settlementNotices,
       maxActiveMissions: MAX_ACTIVE_MISSIONS,
+      loading,
       getMissionById,
       checkIn,
       abandonMission,
@@ -176,10 +219,12 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
       dismissNotice,
     }),
     [
+      missionCatalog,
       allUserMissions,
       activeMissions,
       missionHistory,
       settlementNotices,
+      loading,
       getMissionById,
       checkIn,
       abandonMission,

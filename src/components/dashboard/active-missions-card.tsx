@@ -12,7 +12,7 @@ import type { UserMissionView } from '@/lib/types';
 interface ActiveMissionsCardProps {
   activeMissions: UserMissionView[];
   maxActiveMissions: number;
-  onCheckIn: (userMissionId: string) => void;
+  onCheckIn: (userMissionId: string) => Promise<void>;
 }
 
 /** Card hero do dashboard — CONTEXT.md Seção 3/§7: nunca redireciona, o

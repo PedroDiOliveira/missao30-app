@@ -16,7 +16,6 @@ import { CATEGORY_LABEL } from '@/lib/catalog';
 import { UiIcons } from '@/lib/icons';
 import { getMedalTier, MEDAL_TIER_LABEL, type MedalTier } from '@/lib/medals';
 import type { UserMissionStatus } from '@/lib/types';
-import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 
 // Tom sempre sem culpa (CONTEXT.md Seção 1) — "abandoned" não é tratado
 // como fracasso, e "failed" não usa linguagem de alarme.
@@ -35,8 +34,7 @@ const STATUS_MESSAGE: Record<Exclude<UserMissionStatus, 'active'>, string> = {
 export default function ReportScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
-  const { getMissionById } = useMissionsData();
-  const loading = useSimulatedLoading();
+  const { getMissionById, loading } = useMissionsData();
   const mission = getMissionById(id);
 
   if (loading) return <ReportSkeleton />;

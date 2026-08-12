@@ -18,7 +18,6 @@ import { useMissionsData } from '@/context/missions-context';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORY_LABEL } from '@/lib/catalog';
 import { todayLocal } from '@/lib/date';
-import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 
 /**
  * Detalhe de uma missão — corpo quase idêntico ao antigo /home de missão
@@ -35,9 +34,9 @@ import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 export default function MissionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
-  const { getMissionById, checkIn, abandonMission } = useMissionsData();
+  const { getMissionById, checkIn, abandonMission, loading } = useMissionsData();
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
-  const loading = useSimulatedLoading();
+  const [actionError, setActionError] = useState<string | null>(null);
   const mission = getMissionById(id);
 
   if (loading) return <MissionDetailSkeleton />;
@@ -53,15 +52,23 @@ export default function MissionDetailScreen() {
   const alreadyCheckedInToday = checkInDates.includes(today);
   const livesRemaining = userMission.allowed_fails - state.fails_count;
 
-  function handleCheckIn() {
+  async function handleCheckIn() {
     if (alreadyCheckedInToday) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    checkIn(userMission.id);
+    try {
+      await checkIn(userMission.id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      setActionError('Não foi possível registrar o check-in agora. Verifique sua conexão e tente de novo.');
+    }
   }
 
-  function confirmAbandon() {
-    abandonMission(userMission.id);
-    router.push(`/report/${userMission.id}`);
+  async function confirmAbandon() {
+    try {
+      await abandonMission(userMission.id);
+      router.push(`/report/${userMission.id}`);
+    } catch {
+      setActionError('Não foi possível abandonar a missão agora. Tente de novo em instantes.');
+    }
   }
 
   return (
@@ -152,6 +159,13 @@ export default function MissionDetailScreen() {
         message="Isso não pode ser desfeito. Você vai poder aceitar uma missão nova imediatamente."
         confirmLabel="Abandonar"
         onConfirm={confirmAbandon}
+      />
+
+      <ConfirmDialog
+        visible={actionError !== null}
+        onClose={() => setActionError(null)}
+        title="Ops"
+        message={actionError ?? ''}
       />
     </ThemedView>
   );

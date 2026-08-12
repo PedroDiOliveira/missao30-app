@@ -9,12 +9,12 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORY_LABEL, getCatalogStatus, getMissionAchievement } from '@/lib/catalog';
 import { CATALOG_ICONS, DEFAULT_CATALOG_ICON } from '@/lib/icons';
-import { missionCatalog } from '@/lib/mock-data';
 import type { Mission, UserMissionView } from '@/lib/types';
 
 interface MissionDetailModalProps {
   missionId: string | null;
   onClose: () => void;
+  missionCatalog: Mission[];
   allUserMissions: UserMissionView[];
   activeMissionsCount: number;
   maxActiveMissions: number;
@@ -28,6 +28,7 @@ interface MissionDetailModalProps {
 export function MissionDetailModal({
   missionId,
   onClose,
+  missionCatalog,
   allUserMissions,
   activeMissionsCount,
   maxActiveMissions,
