@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AccountCard } from '@/components/profile/account-card';
 import { ActivityGraphCard } from '@/components/profile/activity-graph-card';
 import { MedalsCard } from '@/components/profile/medals-card';
+import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
 import { ReminderCard } from '@/components/profile/reminder-card';
 import { StatsCard } from '@/components/profile/stats-card';
 import { ThemedText } from '@/components/themed-text';
@@ -15,6 +16,7 @@ import { Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
 import { mockProfile } from '@/lib/mock-data';
 import { computeQuickStats } from '@/lib/stats';
+import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 
 /**
  * Perfil (CONTEXT.md Seção 8, Tela 6) — cartão-hero de identidade (com o
@@ -27,7 +29,10 @@ export default function ProfileScreen() {
   const { activeMissions, missionHistory } = useMissionsData();
   const [reminderTime, setReminderTime] = useState(mockProfile.reminder_time);
   const [reminderEnabled, setReminderEnabled] = useState(mockProfile.reminder_enabled);
+  const loading = useSimulatedLoading();
   const { totalCompletedMissions } = computeQuickStats(activeMissions, missionHistory);
+
+  if (loading) return <ProfileSkeleton />;
 
   return (
     <ThemedView style={styles.container}>

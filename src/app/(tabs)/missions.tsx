@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CatalogHeroCarousel } from '@/components/catalog/catalog-hero-carousel';
 import { CatalogMissionRow } from '@/components/catalog/catalog-mission-row';
+import { CatalogSkeleton } from '@/components/catalog/catalog-skeleton';
 import { CategoryFilterChips, type CategoryFilter } from '@/components/catalog/category-filter-chips';
 import { CustomMissionBanner } from '@/components/catalog/custom-mission-banner';
 import { CustomMissionTeaserModal } from '@/components/catalog/custom-mission-teaser-modal';
@@ -14,6 +15,7 @@ import { SurfaceCard } from '@/components/ui/surface-card';
 import { MaxContentWidth, Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
 import { missionCatalog } from '@/lib/mock-data';
+import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 
 /**
  * Catálogo (CONTEXT.md Seção 8, Tela 2) — sensação de "navegação", não uma
@@ -29,6 +31,9 @@ export default function MissionsScreen() {
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
   const [teaserVisible, setTeaserVisible] = useState(false);
+  const loading = useSimulatedLoading();
+
+  if (loading) return <CatalogSkeleton />;
 
   const atCap = activeMissions.length >= maxActiveMissions;
   const filteredMissions =

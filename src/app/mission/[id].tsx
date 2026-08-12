@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MissionDetailSkeleton } from '@/components/mission/mission-detail-skeleton';
 import { ProgressGrid } from '@/components/mission/progress-grid';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -17,6 +18,7 @@ import { useMissionsData } from '@/context/missions-context';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORY_LABEL } from '@/lib/catalog';
 import { todayLocal } from '@/lib/date';
+import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 
 /**
  * Detalhe de uma missão — corpo quase idêntico ao antigo /home de missão
@@ -35,8 +37,10 @@ export default function MissionDetailScreen() {
   const theme = useTheme();
   const { getMissionById, checkIn, abandonMission } = useMissionsData();
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+  const loading = useSimulatedLoading();
   const mission = getMissionById(id);
 
+  if (loading) return <MissionDetailSkeleton />;
   if (!mission) {
     return <Redirect href="/home" />;
   }

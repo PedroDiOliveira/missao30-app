@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActiveMissionsCard } from '@/components/dashboard/active-missions-card';
+import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { QuickStatsCard } from '@/components/dashboard/quick-stats-card';
 import { QuoteOfTheDayCard } from '@/components/dashboard/quote-of-the-day-card';
 import { SettlementNoticeBanner } from '@/components/dashboard/settlement-notice-banner';
@@ -14,6 +15,7 @@ import { AppMark } from '@/components/ui/app-mark';
 import { Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
 import { mockProfile } from '@/lib/mock-data';
+import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 
 /**
  * Dashboard — nova tela de entrada (CONTEXT.md Seção 3/§7). Nunca redireciona
@@ -24,6 +26,9 @@ import { mockProfile } from '@/lib/mock-data';
 export default function DashboardScreen() {
   const { activeMissions, missionHistory, settlementNotices, maxActiveMissions, checkIn, dismissNotice } =
     useMissionsData();
+  const loading = useSimulatedLoading();
+
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <ThemedView style={styles.container}>
