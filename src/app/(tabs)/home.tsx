@@ -14,7 +14,7 @@ import { ThemedView } from '@/components/themed-view';
 import { AppMark } from '@/components/ui/app-mark';
 import { Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
-import { mockProfile } from '@/lib/mock-data';
+import { useProfileData } from '@/context/profile-context';
 
 /**
  * Dashboard — nova tela de entrada (CONTEXT.md Seção 3/§7). Nunca redireciona
@@ -31,10 +31,11 @@ export default function DashboardScreen() {
     maxActiveMissions,
     checkIn,
     dismissNotice,
-    loading,
+    loading: missionsLoading,
   } = useMissionsData();
+  const { profile, loading: profileLoading } = useProfileData();
 
-  if (loading) return <DashboardSkeleton />;
+  if (missionsLoading || profileLoading || !profile) return <DashboardSkeleton />;
 
   return (
     <ThemedView style={styles.container}>
@@ -48,7 +49,7 @@ export default function DashboardScreen() {
                   Bem-vindo de volta
                 </ThemedText>
                 <ThemedText type="title" style={styles.userName}>
-                  {mockProfile.full_name}
+                  {profile.full_name}
                 </ThemedText>
               </View>
             </View>

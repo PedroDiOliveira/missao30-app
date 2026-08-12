@@ -11,12 +11,12 @@ import { StatsCard } from '@/components/profile/stats-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AppMark } from '@/components/ui/app-mark';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
-import { mockProfile } from '@/lib/mock-data';
+import { useProfileData } from '@/context/profile-context';
 import { computeQuickStats } from '@/lib/stats';
-import { useSimulatedLoading } from '@/lib/use-simulated-loading';
 
 /**
  * Perfil (CONTEXT.md Seção 8, Tela 6) — cartão-hero de identidade (com o
@@ -26,13 +26,28 @@ import { useSimulatedLoading } from '@/lib/use-simulated-loading';
  * seções a mais na tela, não o centro dela.
  */
 export default function ProfileScreen() {
-  const { activeMissions, missionHistory } = useMissionsData();
-  const [reminderTime, setReminderTime] = useState(mockProfile.reminder_time);
-  const [reminderEnabled, setReminderEnabled] = useState(mockProfile.reminder_enabled);
-  const loading = useSimulatedLoading();
+  const { activeMissions, missionHistory, loading: missionsLoading } = useMissionsData();
+  const { profile, loading: profileLoading, updateReminder } = useProfileData();
+  const [actionError, setActionError] = useState<string | null>(null);
   const { totalCompletedMissions } = computeQuickStats(activeMissions, missionHistory);
 
-  if (loading) return <ProfileSkeleton />;
+  if (missionsLoading || profileLoading || !profile) return <ProfileSkeleton />;
+
+  async function handleChangeTime(time: string) {
+    try {
+      await updateReminder(time, profile!.reminder_enabled);
+    } catch {
+      setActionError('Não foi possível salvar o horário do lembrete agora. Tente de novo em instantes.');
+    }
+  }
+
+  async function handleToggleEnabled(enabled: boolean) {
+    try {
+      await updateReminder(profile!.reminder_time, enabled);
+    } catch {
+      setActionError('Não foi possível salvar essa alteração agora. Tente de novo em instantes.');
+    }
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -41,7 +56,7 @@ export default function ProfileScreen() {
           <SurfaceCard variant="strong" style={styles.hero}>
             <AppMark size={40} onDark />
             <ThemedText type="title" themeColor="textOnDark" style={styles.heroName}>
-              {mockProfile.full_name}
+              {profile.full_name}
             </ThemedText>
 
             <View style={styles.heroStat}>
@@ -61,15 +76,17 @@ export default function ProfileScreen() {
           <MedalsCard missionHistory={missionHistory} />
 
           <ReminderCard
-            reminderTime={reminderTime}
-            reminderEnabled={reminderEnabled}
-            onChangeTime={setReminderTime}
-            onToggleEnabled={setReminderEnabled}
+            reminderTime={profile.reminder_time}
+            reminderEnabled={profile.reminder_enabled}
+            onChangeTime={handleChangeTime}
+            onToggleEnabled={handleToggleEnabled}
           />
 
           <AccountCard />
         </ScrollView>
       </SafeAreaView>
+
+      <ConfirmDialog visible={actionError !== null} onClose={() => setActionError(null)} title="Ops" message={actionError ?? ''} />
     </ThemedView>
   );
 }

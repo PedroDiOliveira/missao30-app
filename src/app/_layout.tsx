@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { MissionsProvider } from '@/context/missions-context';
+import { ProfileProvider } from '@/context/profile-context';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -13,7 +14,9 @@ export default function RootLayout() {
     <ThemeProvider value={DefaultTheme}>
       <AuthProvider>
         <MissionsProvider>
-          <RootLayoutNav />
+          <ProfileProvider>
+            <RootLayoutNav />
+          </ProfileProvider>
         </MissionsProvider>
       </AuthProvider>
     </ThemeProvider>
