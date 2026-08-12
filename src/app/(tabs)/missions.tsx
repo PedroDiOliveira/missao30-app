@@ -11,6 +11,7 @@ import { CustomMissionTeaserModal } from '@/components/catalog/custom-mission-te
 import { MissionDetailModal } from '@/components/catalog/mission-detail-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppMark } from '@/components/ui/app-mark';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { MaxContentWidth, Spacing, TabBarClearance } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
@@ -41,9 +42,12 @@ export default function MissionsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ThemedText type="title" style={[styles.heading, styles.inset]}>
-            Catálogo
-          </ThemedText>
+          <View style={[styles.header, styles.inset]}>
+            <AppMark size={36} />
+            <ThemedText type="title" style={styles.heading}>
+              Catálogo
+            </ThemedText>
+          </View>
 
           <View style={styles.inset}>
             <CustomMissionBanner onPress={() => setTeaserVisible(true)} />
@@ -110,6 +114,9 @@ const styles = StyleSheet.create({
   },
   inset: {
     marginHorizontal: Spacing.four,
+  },
+  header: {
+    gap: Spacing.two,
   },
   heading: {
     fontSize: 28,
