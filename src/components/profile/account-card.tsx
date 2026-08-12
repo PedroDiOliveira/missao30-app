@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Spacing } from '@/constants/theme';
+import { useAuth } from '@/context/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 import { UiIcons } from '@/lib/icons';
 
@@ -15,10 +16,12 @@ function handleDeleteRequest() {
 }
 
 /** CONTEXT.md Decisão #7: exclusão de conta via e-mail de suporte, não
- * self-service ainda. Logout é um stub — não existe autenticação real. */
+ * self-service ainda. Logout já é de verdade — chama `signOut()` do
+ * `AuthProvider` (`context/auth-context.tsx`). */
 export function AccountCard() {
   const theme = useTheme();
-  const [logoutInfoVisible, setLogoutInfoVisible] = useState(false);
+  const { signOut } = useAuth();
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
 
   return (
     <SurfaceCard style={styles.card}>
@@ -33,17 +36,19 @@ export function AccountCard() {
         <UiIcons.chevronRight size={16} color={theme.textSecondary} />
       </Pressable>
 
-      <Pressable onPress={() => setLogoutInfoVisible(true)} style={styles.row} accessibilityRole="button">
+      <Pressable onPress={() => setConfirmingLogout(true)} style={styles.row} accessibilityRole="button">
         <ThemedText type="default" themeColor="textSecondary" style={styles.label}>
           Sair
         </ThemedText>
       </Pressable>
 
       <ConfirmDialog
-        visible={logoutInfoVisible}
-        onClose={() => setLogoutInfoVisible(false)}
-        title="Sair"
-        message="Login e logout ainda não existem nesta fase do app — só a interface está pronta."
+        visible={confirmingLogout}
+        onClose={() => setConfirmingLogout(false)}
+        title="Sair da conta?"
+        message="Você pode entrar de novo a qualquer momento com o mesmo e-mail e senha."
+        confirmLabel="Sair"
+        onConfirm={signOut}
       />
     </SurfaceCard>
   );
