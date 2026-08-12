@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Pressable, StyleSheet } from 'react-native';
 
@@ -28,6 +29,13 @@ export function AccountCard() {
       <ThemedText type="smallBold" themeColor="secondary" style={styles.eyebrow}>
         CONTA
       </ThemedText>
+
+      <Pressable onPress={() => router.push('/subscription')} style={styles.row} accessibilityRole="button">
+        <ThemedText type="default" style={styles.label}>
+          Gerenciar assinatura
+        </ThemedText>
+        <UiIcons.chevronRight size={16} color={theme.textSecondary} />
+      </Pressable>
 
       <Pressable onPress={handleDeleteRequest} style={styles.row} accessibilityRole="button">
         <ThemedText type="default" style={styles.label}>

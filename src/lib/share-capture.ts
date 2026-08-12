@@ -12,6 +12,15 @@ import { captureRef, type ViewShotRef } from 'react-native-view-shot';
 
 import { SHARE_CARD_EXPORT_HEIGHT, SHARE_CARD_EXPORT_WIDTH } from '@/constants/share';
 
+/**
+ * Erro distinto (em vez de um `Error` genérico) pra quem chama poder dar um
+ * aviso diferente — isso não é uma falha transitória que "tentar de novo"
+ * resolve: o navegador/dispositivo atual simplesmente não tem bandeja de
+ * compartilhamento nativa (ex.: preview web em navegador sem suporte à Web
+ * Share API, ou `http://` sem contexto seguro).
+ */
+export class SharingUnavailableError extends Error {}
+
 export async function captureCardAsFile(cardRef: React.RefObject<ViewShotRef | null>): Promise<string> {
   if (!cardRef.current) throw new Error('Card de compartilhamento ainda não está pronto');
   return captureRef(cardRef.current, {
@@ -25,7 +34,7 @@ export async function captureCardAsFile(cardRef: React.RefObject<ViewShotRef | n
 
 export async function shareCardFile(fileUri: string): Promise<void> {
   const available = await Sharing.isAvailableAsync();
-  if (!available) throw new Error('Compartilhamento não disponível neste dispositivo');
+  if (!available) throw new SharingUnavailableError('Compartilhamento não disponível neste navegador/dispositivo');
   await Sharing.shareAsync(fileUri, {
     mimeType: 'image/png',
     UTI: 'public.png',

@@ -2,6 +2,7 @@ import { DefaultTheme, Redirect, Stack, ThemeProvider, useSegments } from 'expo-
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
+import { NotificationSync } from '@/components/notification-sync';
 import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { MissionsProvider } from '@/context/missions-context';
@@ -15,6 +16,10 @@ export default function RootLayout() {
       <AuthProvider>
         <MissionsProvider>
           <ProfileProvider>
+            {/* Sem UI própria — só o efeito de reconciliação do lembrete
+                diário (precisa dos dois providers acima, por isso mora
+                aqui dentro). */}
+            <NotificationSync />
             <RootLayoutNav />
           </ProfileProvider>
         </MissionsProvider>
@@ -53,6 +58,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="mission/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="report/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="subscription" options={{ headerShown: false }} />
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="reset-password" options={{ headerShown: false }} />
     </Stack>

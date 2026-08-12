@@ -9,7 +9,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { SHARE_CARD_EXPORT_HEIGHT, SHARE_CARD_EXPORT_WIDTH } from '@/constants/share';
 import { useTheme } from '@/hooks/use-theme';
 import { UiIcons } from '@/lib/icons';
-import { captureCardAsFile, shareCardFile } from '@/lib/share-capture';
+import { captureCardAsFile, shareCardFile, SharingUnavailableError } from '@/lib/share-capture';
 
 const MODAL_MARGIN = 16; // mesmo valor de AnimatedModal (não exportado de lá)
 const CARD_PADDING = Spacing.five; // idem — padding interno do card de AnimatedModal
@@ -58,8 +58,15 @@ export function SharePreviewModal({ visible, onClose, cardRef, children }: Share
     try {
       const fileUri = await captureCardAsFile(cardRef);
       await shareCardFile(fileUri);
-    } catch {
-      setError('Não foi possível gerar a imagem agora. Tente de novo em instantes.');
+    } catch (err) {
+      console.error('Falha ao compartilhar card:', err);
+      if (err instanceof SharingUnavailableError) {
+        // Não é falha transitória (tentar de novo nunca resolve nesse
+        // navegador) — mensagem diferente de propósito.
+        setError('Esse navegador não tem compartilhamento nativo disponível. Funciona no app instalado no celular.');
+      } else {
+        setError('Não foi possível gerar a imagem agora. Tente de novo em instantes.');
+      }
     } finally {
       setSharing(false);
     }

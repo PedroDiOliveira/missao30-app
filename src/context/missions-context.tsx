@@ -13,7 +13,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { MAX_ACTIVE_MISSIONS } from '@/constants/limits';
+import { useMaxActiveMissions } from '@/constants/limits';
 import { useAuth } from '@/context/auth-context';
 import { todayLocal } from '@/lib/date';
 import { computeMissionState } from '@/lib/mission-state';
@@ -63,6 +63,7 @@ interface UserMissionRow {
 
 export function MissionsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const maxActiveMissions = useMaxActiveMissions();
   const [missionCatalog, setMissionCatalog] = useState<Mission[]>([]);
   const [allUserMissions, setAllUserMissions] = useState<UserMissionView[]>([]);
   const [settlementNotices, setSettlementNotices] = useState<SettlementNotice[]>([]);
@@ -210,7 +211,7 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
       activeMissions,
       missionHistory,
       settlementNotices,
-      maxActiveMissions: MAX_ACTIVE_MISSIONS,
+      maxActiveMissions,
       loading,
       getMissionById,
       checkIn,
@@ -224,6 +225,7 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
       activeMissions,
       missionHistory,
       settlementNotices,
+      maxActiveMissions,
       loading,
       getMissionById,
       checkIn,

@@ -1,14 +1,23 @@
 /**
  * Limite de missões ativas simultâneas — CONTEXT.md, log de decisões
  * (reversão de "1 missão ativa" pra N, pensando em virar alavanca de
- * monetização mais pra frente). Nenhuma lógica real de plano/assinatura
- * existe ainda — só o valor provisório e a indireção via hook, no mesmo
- * padrão de `useTheme()`, pra trocar por uma checagem real depois sem
- * precisar tocar em cada tela que consulta o limite.
+ * monetização mais pra frente). `MAX_ACTIVE_MISSIONS` é o valor do plano
+ * grátis; `useMaxActiveMissions()` já deriva do tier mockado de
+ * `useSubscriptionTier()` (`constants/subscription.ts`) — pronto pra virar
+ * checagem real quando existir cobrança, sem precisar tocar em quem já
+ * consome o hook.
  */
+
+import { PREMIUM_MAX_ACTIVE_MISSIONS, useSubscriptionTier, type SubscriptionTier } from '@/constants/subscription';
 
 export const MAX_ACTIVE_MISSIONS = 3;
 
+const MAX_ACTIVE_MISSIONS_BY_TIER: Record<SubscriptionTier, number> = {
+  free: MAX_ACTIVE_MISSIONS,
+  premium: PREMIUM_MAX_ACTIVE_MISSIONS,
+};
+
 export function useMaxActiveMissions(): number {
-  return MAX_ACTIVE_MISSIONS;
+  const tier = useSubscriptionTier();
+  return MAX_ACTIVE_MISSIONS_BY_TIER[tier];
 }
