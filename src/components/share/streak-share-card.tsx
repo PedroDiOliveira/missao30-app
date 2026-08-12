@@ -13,10 +13,18 @@ interface StreakShareCardProps {
   streakDays: number;
 }
 
-/** Card de compartilhamento da página "sequência" do modal do `StreakBadge`
- * — mesmo número/ícone/label já mostrados ali, só em escala de card 9:16
- * pra exportar. Encaminha o ref até o `ViewShot` dentro de `ShareCardFrame`
- * — é isso que `share-capture.ts` captura. */
+/**
+ * Card de compartilhamento da página "sequência" do modal do `StreakBadge`
+ * — mesmo número/ícone já mostrados ali, só em escala de card 9:16 pra
+ * exportar. O label é de propósito DIFERENTE do texto usado dentro do
+ * modal ("DIAS SEGUIDOS DE CHECK-IN") — "check-in" é vocabulário que só
+ * faz sentido pra quem já usa o app; quem recebe o card compartilhado
+ * (Stories, WhatsApp) não tem esse contexto, então aqui descreve o que a
+ * sequência representa, não o mecanismo interno do app.
+ *
+ * Encaminha o ref até o `ViewShot` dentro de `ShareCardFrame` — é isso que
+ * `share-capture.ts` captura.
+ */
 export const StreakShareCard = forwardRef<ViewShotRef, StreakShareCardProps>(function StreakShareCard(
   { width, streakDays },
   ref,
@@ -32,7 +40,7 @@ export const StreakShareCard = forwardRef<ViewShotRef, StreakShareCardProps>(fun
         {streakDays}
       </ThemedText>
       <ThemedText type="smallBold" themeColor="textOnDark" style={styles.label}>
-        {streakDays === 1 ? 'DIA SEGUIDO DE CHECK-IN' : 'DIAS SEGUIDOS DE CHECK-IN'}
+        {streakDays === 1 ? 'DIA SEGUIDO CONSTRUINDO BONS HÁBITOS' : 'DIAS SEGUIDOS CONSTRUINDO BONS HÁBITOS'}
       </ThemedText>
     </ShareCardFrame>
   );
