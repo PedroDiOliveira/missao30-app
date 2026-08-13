@@ -4,7 +4,7 @@ import { MissionStatusBadge } from '@/components/catalog/mission-status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { CATEGORY_LABEL, getMissionAchievement } from '@/lib/catalog';
+import { CATEGORY_LABEL, formatMissionCadence, getMissionAchievement } from '@/lib/catalog';
 import { CATALOG_ICONS, DEFAULT_CATALOG_ICON } from '@/lib/icons';
 import type { Mission, UserMissionView } from '@/lib/types';
 
@@ -64,7 +64,7 @@ export function CatalogHeroCarousel({ missions, allUserMissions, onSelect }: Cat
               {mission.description}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={styles.meta}>
-              {CATEGORY_LABEL[mission.category]} · {mission.duration_days} dias · {mission.allowed_fails} faltas
+              {CATEGORY_LABEL[mission.category]} · {formatMissionCadence(mission)}
             </ThemedText>
           </Pressable>
         );

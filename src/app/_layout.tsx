@@ -59,6 +59,7 @@ function RootLayoutNav() {
       <Stack.Screen name="mission/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="report/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="subscription" options={{ headerShown: false }} />
+      <Stack.Screen name="create-mission" options={{ headerShown: false }} />
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="reset-password" options={{ headerShown: false }} />
     </Stack>

@@ -8,6 +8,11 @@ export type MissionCategory = 'study' | 'fitness' | 'sleep' | 'finance';
 
 export type UserMissionStatus = 'active' | 'completed' | 'failed' | 'abandoned';
 
+/** 'day' = 1 check-in por dia (comportamento original); 'week' = meta de N
+ * check-ins em qualquer dia da semana dom-sáb. `cadence_target` é sempre 1
+ * quando 'day'; entre 1 e 7 quando 'week'. */
+export type CadenceUnit = 'day' | 'week';
+
 export interface Profile {
   id: string;
   full_name: string | null;
@@ -24,8 +29,14 @@ export interface Mission {
   category: MissionCategory;
   icon_name: string;
   duration_days: number;
-  allowed_fails: number;
+  allowed_fails: number; // unidade depende de cadence_unit — ver CadenceUnit
+  cadence_unit: CadenceUnit;
+  cadence_target: number;
   is_published: boolean;
+  // null = curada (seed/admin); presente = criada pelo próprio usuário via
+  // /create-mission — nunca publicada pro catálogo geral (RLS garante que
+  // só aparece pra quem criou).
+  created_by: string | null;
   created_at: string;
 }
 
@@ -36,6 +47,8 @@ export interface UserMission {
   start_date: string; // YYYY-MM-DD, data local do cliente
   duration_days: number; // snapshot de missions.duration_days no accept
   allowed_fails: number; // snapshot de missions.allowed_fails no accept
+  cadence_unit: CadenceUnit; // snapshot de missions.cadence_unit no accept
+  cadence_target: number; // snapshot de missions.cadence_target no accept
   status: UserMissionStatus;
   fails_count: number;
   created_at: string;
@@ -81,4 +94,7 @@ export interface SettlementNotice {
   newStatus: Exclude<UserMissionStatus, 'active'>;
 }
 
-export type DayCellState = 'completed' | 'missed' | 'current' | 'future';
+// 'rest' = dia passado sem check-in numa missão de cadência semanal — nunca
+// é individualmente marcado como falta (a falta é por semana, não por dia
+// específico); visualmente neutro, igual 'future'.
+export type DayCellState = 'completed' | 'missed' | 'current' | 'future' | 'rest';

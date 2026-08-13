@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { AnimatedModal } from '@/components/ui/animated-modal';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { CATEGORY_LABEL, getCatalogStatus, getMissionAchievement } from '@/lib/catalog';
+import { CATEGORY_LABEL, formatMissionCadence, getCatalogStatus, getMissionAchievement } from '@/lib/catalog';
 import { CATALOG_ICONS, DEFAULT_CATALOG_ICON } from '@/lib/icons';
 import type { Mission, UserMissionView } from '@/lib/types';
 
@@ -99,8 +99,7 @@ export function MissionDetailModal({
             {mission.description}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {CATEGORY_LABEL[mission.category]} · Duração: {mission.duration_days} dias · Faltas permitidas:{' '}
-            {mission.allowed_fails}
+            {CATEGORY_LABEL[mission.category]} · {formatMissionCadence(mission)}
           </ThemedText>
 
           {error && (

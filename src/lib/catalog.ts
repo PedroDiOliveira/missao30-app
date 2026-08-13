@@ -6,7 +6,7 @@
  */
 
 import { getMedalTier, type MedalTier } from '@/lib/medals';
-import type { MissionCategory, UserMissionView } from '@/lib/types';
+import type { Mission, MissionCategory, UserMissionView } from '@/lib/types';
 
 export const CATEGORY_LABEL: Record<MissionCategory, string> = {
   study: 'Estudos',
@@ -14,6 +14,28 @@ export const CATEGORY_LABEL: Record<MissionCategory, string> = {
   sleep: 'Sono',
   finance: 'Finanças',
 };
+
+/** Ícone padrão por categoria pra missão personalizada (`/create-mission`)
+ * — atribuído automaticamente, não é campo do formulário (mantém a etapa
+ * de título+categoria em só 2 campos). Reaproveita ícones já mapeados em
+ * `CATALOG_ICONS` (`lib/icons.ts`), nenhum novo. */
+export const CATEGORY_DEFAULT_ICON: Record<MissionCategory, string> = {
+  study: 'book-open',
+  fitness: 'dumbbell',
+  sleep: 'moon',
+  finance: 'wallet',
+};
+
+/** Texto de meta da missão (duração/tolerância), cadência-aware — usado
+ * no carrossel e no modal de detalhe do catálogo, fonte única pra não
+ * duas telas descreverem a mesma missão com números diferentes. */
+export function formatMissionCadence(mission: Mission): string {
+  if (mission.cadence_unit === 'day') {
+    return `Duração: ${mission.duration_days} dias · Faltas permitidas: ${mission.allowed_fails}`;
+  }
+  const weekLabel = mission.allowed_fails === 1 ? 'semana' : 'semanas';
+  return `${mission.cadence_target}x por semana · ${mission.allowed_fails} ${weekLabel} de tolerância`;
+}
 
 export type CatalogStatus = 'available' | 'active' | 'completed' | 'failed' | 'abandoned';
 

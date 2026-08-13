@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MissionDetailSkeleton } from '@/components/mission/mission-detail-skeleton';
 import { ProgressGrid } from '@/components/mission/progress-grid';
+import { WeeklyCadenceSummary } from '@/components/mission/weekly-cadence-summary';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BackButton } from '@/components/ui/back-button';
@@ -113,7 +114,18 @@ export default function MissionDetailScreen() {
               startDate={userMission.start_date}
               checkInDates={checkInDates}
               isActive
+              cadenceUnit={userMission.cadence_unit}
             />
+
+            {userMission.cadence_unit === 'week' && (
+              <WeeklyCadenceSummary
+                startDate={userMission.start_date}
+                durationDays={userMission.duration_days}
+                cadenceTarget={userMission.cadence_target}
+                checkInDates={checkInDates}
+                today={today}
+              />
+            )}
 
             <View style={styles.streakRow}>
               <StreakRingIcon color={theme.secondary} size={16} />

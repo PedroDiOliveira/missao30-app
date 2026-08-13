@@ -10,10 +10,10 @@ interface CustomMissionBannerProps {
 }
 
 /** Banner de destaque no topo do catálogo, antes do carrossel — ponto de
- * entrada da criação de missão personalizada, já pensada como recurso
- * pago futuro (CONTEXT.md Log de Decisões #14). Borda tracejada + selo
- * "PREMIUM" marcam visualmente que é diferente das missões reais do
- * catálogo abaixo. Sem formulário nem cobrança: toque só abre o modal-teaser. */
+ * entrada da criação de missão personalizada, liberada pra todo mundo
+ * (CONTEXT.md Log de Decisões, corrige a moldura de "recurso pago futuro"
+ * da Decisão #14 original). Toque abre o formulário de verdade
+ * (`/create-mission`), não um teaser. */
 export function CustomMissionBanner({ onPress }: CustomMissionBannerProps) {
   const theme = useTheme();
 
@@ -22,25 +22,18 @@ export function CustomMissionBanner({ onPress }: CustomMissionBannerProps) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.banner,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.primary },
+        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
         pressed && styles.pressed,
       ]}
       accessibilityRole="button">
       <View style={[styles.iconBadge, { backgroundColor: theme.primary }]}>
-        <UiIcons.lock size={18} color={theme.textOnDark} />
+        <UiIcons.add size={20} color={theme.textOnDark} />
       </View>
 
       <View style={styles.textBlock}>
-        <View style={styles.titleRow}>
-          <ThemedText type="smallBold">Crie a sua própria missão</ThemedText>
-          <View style={[styles.tag, { backgroundColor: theme.primary }]}>
-            <ThemedText type="smallBold" themeColor="textOnDark" style={styles.tagLabel}>
-              PREMIUM
-            </ThemedText>
-          </View>
-        </View>
+        <ThemedText type="smallBold">Crie a sua própria missão</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Não achou a missão certa? Em breve você vai poder criar a sua, do seu jeito.
+          Não achou a missão certa? Monte a sua, do seu jeito e no seu ritmo.
         </ThemedText>
       </View>
 
@@ -56,8 +49,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     padding: Spacing.four,
     borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
+    borderWidth: 1,
   },
   pressed: {
     opacity: 0.9,
@@ -72,20 +64,5 @@ const styles = StyleSheet.create({
   textBlock: {
     flex: 1,
     gap: Spacing.half,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  tag: {
-    paddingHorizontal: Spacing.one,
-    paddingVertical: 2,
-    borderRadius: Radius.sm,
-  },
-  tagLabel: {
-    fontSize: 9,
-    lineHeight: 12,
-    letterSpacing: 0.5,
   },
 });

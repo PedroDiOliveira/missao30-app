@@ -19,10 +19,11 @@ const PLAN_LABEL: Record<'free' | 'premium', string> = {
   premium: 'Premium',
 };
 
-const BENEFITS = [
-  `Até ${PREMIUM_MAX_ACTIVE_MISSIONS} missões simultâneas (vs. ${MAX_ACTIVE_MISSIONS} no grátis)`,
-  'Crie sua própria missão personalizada',
-];
+// Criação de missão personalizada saiu daqui — deixou de ser benefício
+// pago (CONTEXT.md Log de Decisões, corrige a Decisão #21), liberada pra
+// todo mundo em /create-mission. Não inventei um benefício novo pra
+// preencher a lista; fica só o que continua sendo real.
+const BENEFITS = [`Até ${PREMIUM_MAX_ACTIVE_MISSIONS} missões simultâneas (vs. ${MAX_ACTIVE_MISSIONS} no grátis)`];
 
 /**
  * Gestão de assinatura — novo atalho no card "Conta" do perfil. Lógica

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProgressGrid } from '@/components/mission/progress-grid';
 import { ReportSkeleton } from '@/components/mission/report-skeleton';
+import { WeeklyCadenceSummary } from '@/components/mission/weekly-cadence-summary';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BackButton } from '@/components/ui/back-button';
@@ -13,8 +14,10 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useMissionsData } from '@/context/missions-context';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORY_LABEL } from '@/lib/catalog';
+import { todayLocal } from '@/lib/date';
 import { UiIcons } from '@/lib/icons';
 import { getMedalTier, MEDAL_TIER_LABEL, type MedalTier } from '@/lib/medals';
+import { computeWeekBuckets } from '@/lib/mission-state';
 import type { UserMissionStatus } from '@/lib/types';
 
 // Tom sempre sem culpa (CONTEXT.md Seção 1) — "abandoned" não é tratado
@@ -61,7 +64,17 @@ export default function ReportScreen() {
   };
 
   const checkInsCount = checkInDates.length;
-  const completionRate = Math.round((checkInsCount / userMission.duration_days) * 100);
+  // Denominador cadência-aware: pra missão semanal, `duration_days` (30)
+  // deixaria o aproveitamento de uma execução perfeita de 3x/semana em
+  // ~40-50%, estragando o momento de celebração do "Missão Cumprida". Usa
+  // a soma das metas semanais em vez disso — checkInDates vazio de
+  // propósito, só a soma dos `target` importa aqui, não quem já assentou.
+  const completionTarget =
+    userMission.cadence_unit === 'week'
+      ? computeWeekBuckets(userMission.start_date, userMission.duration_days, userMission.cadence_target, [], todayLocal())
+          .reduce((sum, bucket) => sum + bucket.target, 0)
+      : userMission.duration_days;
+  const completionRate = Math.round((checkInsCount / completionTarget) * 100);
 
   const metrics = [
     { Icon: UiIcons.stats, value: checkInsCount, label: 'Check-ins\nrealizados' },
@@ -120,8 +133,24 @@ export default function ReportScreen() {
               startDate={userMission.start_date}
               checkInDates={checkInDates}
               isActive={false}
+              cadenceUnit={userMission.cadence_unit}
             />
           </SurfaceCard>
+
+          {userMission.cadence_unit === 'week' && (
+            <SurfaceCard style={styles.gridCard}>
+              <ThemedText type="smallBold" themeColor="secondary" style={styles.eyebrow}>
+                SEMANA A SEMANA
+              </ThemedText>
+              <WeeklyCadenceSummary
+                startDate={userMission.start_date}
+                durationDays={userMission.duration_days}
+                cadenceTarget={userMission.cadence_target}
+                checkInDates={checkInDates}
+                today={todayLocal()}
+              />
+            </SurfaceCard>
+          )}
 
           <Pressable
             onPress={() => router.push('/missions')}

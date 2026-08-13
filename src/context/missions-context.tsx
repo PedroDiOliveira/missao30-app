@@ -15,16 +15,27 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { useMaxActiveMissions } from '@/constants/limits';
 import { useAuth } from '@/context/auth-context';
+import { CATEGORY_DEFAULT_ICON } from '@/lib/catalog';
 import { todayLocal } from '@/lib/date';
 import { computeMissionState } from '@/lib/mission-state';
 import { supabase } from '@/lib/supabase';
 import type {
+  CadenceUnit,
   Mission,
+  MissionCategory,
   SettlementNotice,
   UserMission,
   UserMissionState,
   UserMissionView,
 } from '@/lib/types';
+
+export interface CreateCustomMissionInput {
+  title: string;
+  description: string;
+  category: MissionCategory;
+  cadenceUnit: CadenceUnit;
+  cadenceTarget: number;
+}
 
 interface MissionsContextValue {
   missionCatalog: Mission[];
@@ -38,6 +49,7 @@ interface MissionsContextValue {
   checkIn: (userMissionId: string) => Promise<void>;
   abandonMission: (userMissionId: string) => Promise<void>;
   acceptMission: (missionId: string) => Promise<string>;
+  createCustomMission: (input: CreateCustomMissionInput) => Promise<string>;
   dismissNotice: (userMissionId: string) => void;
 }
 
@@ -54,6 +66,8 @@ interface UserMissionRow {
   start_date: string;
   duration_days: number;
   allowed_fails: number;
+  cadence_unit: UserMission['cadence_unit'];
+  cadence_target: number;
   status: UserMission['status'];
   fails_count: number;
   created_at: string;
@@ -127,6 +141,8 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
           start_date: row.start_date,
           duration_days: row.duration_days,
           allowed_fails: row.allowed_fails,
+          cadence_unit: row.cadence_unit,
+          cadence_target: row.cadence_target,
           status: state.status,
           fails_count: state.fails_count,
           created_at: row.created_at,
@@ -200,6 +216,36 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
     [loadData],
   );
 
+  const createCustomMission = useCallback(
+    async (input: CreateCustomMissionInput): Promise<string> => {
+      if (!user) throw new Error('Sem usuário autenticado');
+      // allowed_fails derivado da cadência (não é campo do formulário) —
+      // mesma calibração da Decisão #23: ~1 semana de tolerância pra
+      // cadência semanal, ~3 dias pra diária.
+      const allowedFails = input.cadenceUnit === 'week' ? 1 : 3;
+
+      const { data, error } = await supabase
+        .from('missions')
+        .insert({
+          title: input.title,
+          description: input.description,
+          category: input.category,
+          icon_name: CATEGORY_DEFAULT_ICON[input.category],
+          cadence_unit: input.cadenceUnit,
+          cadence_target: input.cadenceTarget,
+          allowed_fails: allowedFails,
+          created_by: user.id,
+          is_published: false,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      await loadData();
+      return (data as Mission).id;
+    },
+    [user, loadData],
+  );
+
   const dismissNotice = useCallback((userMissionId: string) => {
     setSettlementNotices((prev) => prev.filter((n) => n.userMissionId !== userMissionId));
   }, []);
@@ -217,6 +263,7 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
       checkIn,
       abandonMission,
       acceptMission,
+      createCustomMission,
       dismissNotice,
     }),
     [
@@ -231,6 +278,7 @@ export function MissionsProvider({ children }: { children: ReactNode }) {
       checkIn,
       abandonMission,
       acceptMission,
+      createCustomMission,
       dismissNotice,
     ],
   );
