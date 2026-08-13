@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -28,7 +28,7 @@ const WEEK_TARGET_OPTIONS = [2, 3, 4, 5, 6];
  */
 export default function CreateMissionScreen() {
   const theme = useTheme();
-  const { createCustomMission } = useMissionsData();
+  const { createCustomMission, acceptMission } = useMissionsData();
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<MissionCategory | null>(null);
@@ -37,6 +37,11 @@ export default function CreateMissionScreen() {
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Variável simples (não state) — só precisa sobreviver dentro da mesma
+  // chamada de handleCreate, pra diferenciar "criação falhou" de "criou
+  // mas não deu pra aceitar" no catch. onDismissError lê o valor mais
+  // recente sem se preocupar com closure velha (é só .current).
+  const missionCreatedRef = useRef(false);
 
   const canAdvanceStep1 = title.trim().length > 0 && category !== null;
   const canSubmit = description.trim().length > 0;
@@ -53,20 +58,35 @@ export default function CreateMissionScreen() {
     if (!category) return;
     setError(null);
     setCreating(true);
+    missionCreatedRef.current = false;
     try {
-      await createCustomMission({
+      const missionId = await createCustomMission({
         title: title.trim(),
         description: description.trim(),
         category,
         cadenceUnit,
         cadenceTarget: cadenceUnit === 'week' ? cadenceTarget : 1,
       });
-      router.replace('/missions');
+      missionCreatedRef.current = true;
+      // Cria já aceita direto — reaproveita a RPC de aceitar que já existe,
+      // mesmo padrão de "aceitar leva direto pro detalhe" já usado no
+      // modal do catálogo (`mission-detail-modal.tsx`).
+      const userMissionId = await acceptMission(missionId);
+      router.replace(`/mission/${userMissionId}`);
     } catch {
-      setError('Não foi possível criar a missão agora. Tente de novo em instantes.');
+      setError(
+        missionCreatedRef.current
+          ? 'Sua missão foi criada! Não deu pra aceitar agora (você deve estar no limite de missões simultâneas) — ela já está em "Minhas Missões", no catálogo, pra aceitar quando quiser.'
+          : 'Não foi possível criar a missão agora. Tente de novo em instantes.',
+      );
     } finally {
       setCreating(false);
     }
+  }
+
+  function handleDismissError() {
+    setError(null);
+    if (missionCreatedRef.current) router.replace('/missions');
   }
 
   return (
@@ -234,7 +254,7 @@ export default function CreateMissionScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      <ConfirmDialog visible={error !== null} onClose={() => setError(null)} title="Ops" message={error ?? ''} />
+      <ConfirmDialog visible={error !== null} onClose={handleDismissError} title="Ops" message={error ?? ''} />
     </ThemedView>
   );
 }
